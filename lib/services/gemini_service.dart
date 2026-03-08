@@ -14,7 +14,7 @@ class GeminiService {
 
   /// Static method to generate text, as used in HomeScreen
   static Future<String> generateText(String prompt) async {
-    final apiKey = _staticApiKey ?? 'REPLACE_WITH_YOUR_GEMINI_API_KEY';
+    final apiKey = _staticApiKey ?? 'AIzaSyAZu2a2p5vLsMgB5cDjgWzSJTEAsLLoLCE';
     final response = await http.post(
       Uri.parse('$_baseUrl?key=$apiKey'),
       headers: {'Content-Type': 'application/json'},
