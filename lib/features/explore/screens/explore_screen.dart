@@ -5,6 +5,11 @@ import '../models/kink_model.dart';
 import '../models/position_model.dart';
 import 'kink_detail_screen.dart';
 import 'position_detail_screen.dart';
+import '../../auth/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
+import '../../../services/database_service.dart';
+import '../models/challenge_model.dart';
+import '../models/challenge_interaction_model.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -191,65 +196,230 @@ class _PositionCard extends StatelessWidget {
 
 // ─── Challenges ──────────────────────────────────────────────────────────────
 
-class _ChallengesTab extends StatelessWidget {
+// ─── Challenges ──────────────────────────────────────────────────────────────
+
+class _ChallengesTab extends StatefulWidget {
   const _ChallengesTab();
 
-  static const _challenges = [
-    _Challenge('7-Day Touch Challenge', '🤝', 'Hold hands for at least 30 min every day this week.', '7 Days', Color(0xFFE63950)),
-    _Challenge('Love Language Week', '💌', 'Express love in a different language each day — words, touch, gifts, time, service.', '7 Days', Color(0xFF9B30FF)),
-    _Challenge('Screen-Free Evening', '📵', 'Spend one full evening with no phones, no TV — just each other.', '1 Day', Color(0xFFFF8C42)),
-    _Challenge('Cook a New Dish Together', '🍳', "Pick a cuisine you've never tried and cook it from scratch together.", '1 Day', Color(0xFF30B0FF)),
-    _Challenge('Memory Jar', '🫙', 'Both write down 10 favourite memories of each other. Read them aloud together.', '2 Days', Color(0xFF4DFF88)),
-  ];
+  @override
+  State<_ChallengesTab> createState() => _ChallengesTabState();
+}
+
+class _ChallengesTabState extends State<_ChallengesTab> {
+  final DatabaseService _dbService = DatabaseService();
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: _challenges.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (_, i) => _ChallengeCard(c: _challenges[i]),
+    return Stack(
+      children: [
+        StreamBuilder<List<ChallengeModel>>(
+          stream: _dbService.getChallengesStream(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            }
+            if (snapshot.hasError) {
+              return const Center(child: Text('Failed to load challenges', style: TextStyle(color: Colors.white70)));
+            }
+
+            final challenges = snapshot.data ?? [];
+            if (challenges.isEmpty) {
+              return const Center(
+                child: Text('No challenges yet.\\nBe the first to add one!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.textSecondary, fontFamily: 'Inter')),
+              );
+            }
+
+            return ListView.separated(
+              padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 80), // Padding for FAB
+              itemCount: challenges.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (_, i) => _ChallengeCard(challenge: challenges[i]),
+            );
+          },
+        ),
+        Positioned(
+          bottom: 24,
+          right: 24,
+          child: FloatingActionButton.extended(
+            onPressed: () => _showAddChallengeModal(context),
+            backgroundColor: AppColors.primary,
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text('Add Challenge', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'Inter')),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showAddChallengeModal(BuildContext context) {
+    final titleCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final emojiCtrl = TextEditingController(text: '🔥');
+    final durationCtrl = TextEditingController(text: '1 Day');
+    
+    // Pick a random preset color
+    final colors = ['E63950', '9B30FF', 'FF8C42', '30B0FF', '4DFF88'];
+    colors.shuffle();
+    final defaultColor = colors.first;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text('New Challenge', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Inter')),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 60,
+                      child: TextField(
+                        controller: emojiCtrl,
+                        maxLength: 2,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 24),
+                        decoration: InputDecoration(
+                          counterText: '',
+                          filled: true,
+                          fillColor: const Color(0xFF161224),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: titleCtrl,
+                        style: const TextStyle(color: Colors.white, fontFamily: 'Inter'),
+                        decoration: InputDecoration(
+                          hintText: 'Challenge Title',
+                          hintStyle: const TextStyle(color: AppColors.textHint),
+                          filled: true,
+                          fillColor: const Color(0xFF161224),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descCtrl,
+                  maxLines: 3,
+                  style: const TextStyle(color: Colors.white, fontFamily: 'Inter'),
+                  decoration: InputDecoration(
+                    hintText: 'Describe the challenge...',
+                    hintStyle: const TextStyle(color: AppColors.textHint),
+                    filled: true,
+                    fillColor: const Color(0xFF161224),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: durationCtrl,
+                  style: const TextStyle(color: Colors.white, fontFamily: 'Inter'),
+                  decoration: InputDecoration(
+                    hintText: 'Duration (e.g. 1 Day, 1 Week)',
+                    hintStyle: const TextStyle(color: AppColors.textHint),
+                    filled: true,
+                    fillColor: const Color(0xFF161224),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (titleCtrl.text.trim().isEmpty || descCtrl.text.trim().isEmpty) return;
+                    
+                    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                    final user = authProvider.currentUser;
+                    if (user == null) return;
+
+                    final newChallenge = ChallengeModel(
+                      id: '',
+                      title: titleCtrl.text.trim(),
+                      description: descCtrl.text.trim(),
+                      emoji: emojiCtrl.text.trim().isEmpty ? '🔥' : emojiCtrl.text.trim(),
+                      duration: durationCtrl.text.trim(),
+                      colorHex: defaultColor,
+                      likes: 0,
+                      authorId: user.uid,
+                      createdAt: DateTime.now(),
+                    );
+
+                    await _dbService.addChallenge(newChallenge);
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Post Challenge', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
-class _Challenge {
-  final String title;
-  final String emoji;
-  final String desc;
-  final String duration;
-  final Color color;
-  const _Challenge(this.title, this.emoji, this.desc, this.duration, this.color);
-}
-
 class _ChallengeCard extends StatelessWidget {
-  final _Challenge c;
-  const _ChallengeCard({required this.c});
+  final ChallengeModel challenge;
+  const _ChallengeCard({required this.challenge});
+
+  Color _parseColor(String? hex) {
+    if (hex == null || hex.isEmpty) return const Color(0xFFE63950);
+    var h = hex.replaceAll('#', '');
+    if (h.length == 6) h = 'FF$h';
+    return Color(int.parse(h, radix: 16));
+  }
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.currentUser;
+    final cColor = _parseColor(challenge.colorHex);
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: c.color.withAlpha(50), width: 1),
+        border: Border.all(color: cColor.withAlpha(50), width: 1),
       ),
       child: Row(children: [
         Container(
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-              color: c.color.withAlpha(25),
+              color: cColor.withAlpha(25),
               borderRadius: BorderRadius.circular(14)),
-          child: Center(child: Text(c.emoji, style: const TextStyle(fontSize: 28))),
+          child: Center(child: Text(challenge.emoji, style: const TextStyle(fontSize: 28))),
         ),
         const SizedBox(width: 14),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Expanded(
-                child: Text(c.title,
+                child: Text(challenge.title,
                     style: const TextStyle(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.w700,
@@ -259,24 +429,83 @@ class _ChallengeCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                    color: c.color.withAlpha(25),
+                    color: cColor.withAlpha(25),
                     borderRadius: BorderRadius.circular(8)),
-                child: Text(c.duration,
+                child: Text(challenge.duration,
                     style: TextStyle(
-                        color: c.color,
+                        color: cColor,
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w600,
                         fontSize: 11)),
               ),
             ]),
             const SizedBox(height: 4),
-            Text(c.desc,
+            Text(challenge.description,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontFamily: 'Inter',
                     fontSize: 13)),
+            const SizedBox(height: 12),
+            if (user != null)
+              StreamBuilder<ChallengeInteractionModel?>(
+                stream: DatabaseService().getChallengeInteractionStream(user.uid, challenge.id),
+                builder: (context, snapshot) {
+                  final interaction = snapshot.data;
+                  final isLiked = interaction?.status == 'liked';
+                  final isTried = interaction?.isTried == true;
+
+                  return Row(
+                    children: [
+                      // Like Button
+                      GestureDetector(
+                        onTap: () {
+                          DatabaseService().recordChallengeInteraction(
+                            user.uid,
+                            challenge.id,
+                            // If it's already liked, tell the DB to unlike it (decrement)
+                            isLiked: !isLiked,
+                          );
+                        },
+                        child: Row(
+                          children: [
+                            Icon(isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded, 
+                                 color: isLiked ? AppColors.primary : Colors.white54, size: 18),
+                            const SizedBox(width: 4),
+                            Text('${challenge.likes}', style: TextStyle(
+                              color: isLiked ? AppColors.primary : Colors.white54,
+                              fontSize: 12, fontWeight: FontWeight.w500, fontFamily: 'Inter'
+                            )),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      // Tried Button
+                      GestureDetector(
+                        onTap: () {
+                          DatabaseService().recordChallengeInteraction(
+                            user.uid,
+                            challenge.id,
+                            isTried: !isTried,
+                          );
+                        },
+                        child: Row(
+                          children: [
+                            Icon(isTried ? Icons.check_circle_rounded : Icons.check_circle_outline_rounded, 
+                                 color: isTried ? Colors.greenAccent : Colors.white54, size: 18),
+                            const SizedBox(width: 4),
+                            Text('Tried', style: TextStyle(
+                              color: isTried ? Colors.greenAccent : Colors.white54,
+                              fontSize: 12, fontWeight: FontWeight.w500, fontFamily: 'Inter'
+                            )),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
           ]),
         ),
       ]),

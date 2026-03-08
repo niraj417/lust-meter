@@ -9,6 +9,7 @@ class AppConstants {
   static const partnerRequestsCollection = 'partner_requests';
   static const positionsCollection = 'positions';
   static const challengesCollection = 'challenges';
+  static const challengeInteractionsCollection = 'challenge_interactions';
   static const kinksCollection = 'kinks';
   static const kinkInteractionsCollection = 'kink_interactions';
   static const doctorsCollection = 'doctors';

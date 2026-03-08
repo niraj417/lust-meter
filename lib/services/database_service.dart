@@ -7,6 +7,8 @@ import '../core/models/kink_interaction_model.dart';
 import '../core/models/message_model.dart';
 import '../core/models/partner_connection_model.dart';
 import '../core/models/user_model.dart';
+import '../../features/explore/models/challenge_model.dart';
+import '../../features/explore/models/challenge_interaction_model.dart';
 
 class DatabaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -98,6 +100,55 @@ class DatabaseService {
         .where('userId', isEqualTo: userId)
         .get();
     return snapshot.docs.map((doc) => KinkInteractionModel.fromMap(doc.data(), doc.id)).toList();
+  }
+
+  // --- Challenges ---
+  Stream<List<ChallengeModel>> getChallengesStream() {
+    return _firestore
+        .collection(AppConstants.challengesCollection)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => ChallengeModel.fromMap(doc.data(), doc.id)).toList());
+  }
+
+  Future<void> addChallenge(ChallengeModel challenge) async {
+    await _firestore.collection(AppConstants.challengesCollection).add(challenge.toMap());
+  }
+
+  Future<void> recordChallengeInteraction(String userId, String challengeId, {bool? isLiked, bool? isTried}) async {
+    final docId = '${userId}_$challengeId';
+    final docRef = _firestore.collection(AppConstants.challengeInteractionsCollection).doc(docId);
+    
+    final updateData = <String, dynamic>{
+      'userId': userId,
+      'challengeId': challengeId,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+    
+    if (isLiked != null) {
+      updateData['status'] = isLiked ? 'liked' : 'none';
+      // Increment or decrement likes on the challenge document
+      await _firestore.collection(AppConstants.challengesCollection).doc(challengeId).update({
+        'likes': FieldValue.increment(isLiked ? 1 : -1)
+      });
+    }
+    if (isTried != null) {
+      updateData['isTried'] = isTried;
+    }
+
+    await docRef.set(updateData, SetOptions(merge: true));
+  }
+
+  Stream<ChallengeInteractionModel?> getChallengeInteractionStream(String userId, String challengeId) {
+    final docId = '${userId}_$challengeId';
+    return _firestore
+        .collection(AppConstants.challengeInteractionsCollection)
+        .doc(docId)
+        .snapshots()
+        .map((doc) {
+      if (!doc.exists) return null;
+      return ChallengeInteractionModel.fromMap(doc.data()!, doc.id);
+    });
   }
 
   // --- Game Sessions ---
