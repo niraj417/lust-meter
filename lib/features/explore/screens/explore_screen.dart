@@ -347,7 +347,7 @@ class _ChallengesTabState extends State<_ChallengesTab> {
                     if (titleCtrl.text.trim().isEmpty || descCtrl.text.trim().isEmpty) return;
                     
                     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                    final user = authProvider.currentUser;
+                    final user = authProvider.user;
                     if (user == null) return;
 
                     final newChallenge = ChallengeModel(
@@ -395,7 +395,7 @@ class _ChallengeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final user = authProvider.currentUser;
+    final user = authProvider.user;
     final cColor = _parseColor(challenge.colorHex);
 
     return Container(
