@@ -1,4 +1,4 @@
-package com.example.lust_meter
+package com.lustmeter.app
 
 import io.flutter.embedding.android.FlutterActivity
 
