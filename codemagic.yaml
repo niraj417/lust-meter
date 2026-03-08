@@ -1,0 +1,65 @@
+# Codemagic CI/CD configuration for Lust Meter
+# See https://docs.codemagic.io/yaml/yaml-usage/ for more details
+
+workflows:
+  android-build:
+    name: Android Build
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    environment:
+      flutter: stable
+      groups:
+        - google_play_credentials # Define this in Codemagic UI
+      vars:
+        PACKAGE_NAME: "com.lustmeter.app"
+    scripts:
+      - name: Set up local.properties
+        script: |
+          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+      - name: Flutter analyze
+        script: |
+          flutter analyze
+      - name: Build Android APK
+        script: |
+          flutter build apk --release --build-name=1.0.0 --build-number=$BUILD_NUMBER
+      - name: Build Android App Bundle
+        script: |
+          flutter build appbundle --release --build-name=1.0.0 --build-number=$BUILD_NUMBER
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+      - build/app/outputs/bundle/release/*.aab
+    publishing:
+      email:
+        recipients:
+          - user@example.com # Replace with your email
+
+  ios-build:
+    name: iOS Build
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    environment:
+      flutter: stable
+      groups:
+        - app_store_credentials # Define this in Codemagic UI
+      vars:
+        APP_ID: 123456789 # Replace with your App Store App ID
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+      - name: Flutter analyze
+        script: |
+          flutter analyze
+      - name: Build iOS
+        script: |
+          find . -name "Podfile" -execdir pod install \;
+          flutter build ios --release --no-codesign
+    artifacts:
+      - build/ios/iphoneos/*.app
+    publishing:
+      email:
+        recipients:
+          - user@example.com

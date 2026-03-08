@@ -1,0 +1,53 @@
+# Lust Meter Development Task List
+
+## 1. Project Planning & Setup
+- [x] Create detailed implementation plan
+- [ ] Initialize new Flutter project (`lust_meter`)
+- [ ] Set up Firebase project & configure iOS/Android apps
+- [ ] Configure Flutter folder structure (Clean Architecture/Feature-first)
+
+## 2. UI/UX Design Ideas with Stitch (StitchMCP)
+- [x] Generate concept design for Launch/Auth screens
+- [x] Generate concept design for Home Dashboard
+- [x] Generate concept design for Play/Games Tab
+- [x] Generate concept design for Explore Tab
+
+## 3. Foundation & Core Services
+- [ ] Setup Theme, Colors, Typography (Dark theme, deep purple/red accents)
+- [ ] Implement robust App Navigation (Bottom Navigation + Nested routing)
+- [ ] Create reusable UI components (Buttons, Inputs, Cards, Animations)
+- [ ] Integrate Firebase Authentication (Email + Google)
+- [ ] Implement Gemini API service for AI tips/questions
+
+## 4. Feature: Onboarding & Partner Connection
+- [ ] 18+ Consent & Login/Signup screens
+- [ ] Profile setup & relationship type selection
+- [ ] Connect Partner system (ID exchange, invites, approval)
+
+## 5. Feature: Home Dashboard
+- [ ] Develop Dashboard UI (Lust Score, Emotional Balance, etc.)
+- [ ] Integrate AI relationship tips (Gemini AI)
+- [ ] Wire up Quick Actions (Quizzes, Games, Spin Wheel, Consult)
+
+## 6. Feature: Play (Games) Tab
+- [ ] Truth or Dare game logic & UI
+- [ ] Fantasy Cards swiping UI
+- [ ] Spin The Wheel UI and logic
+
+## 7. Feature: Explore Tab
+- [ ] Challenges list and detail views
+- [ ] Positions Library (grid, details, save/like)
+- [ ] Kinks list & compatibility search
+
+## 8. Feature: Partner & Consultation
+- [ ] Partner shared timeline & chat UI
+- [ ] Consultation directory & booking placeholder
+
+## 9. Feature: Profile & Rewards
+- [ ] User profile editor
+- [ ] Rewards store UI
+
+## 10. Review & Refine
+- [ ] Review UI fidelity against requirements
+- [ ] Test Firebase Security rules
+- [ ] Performance check (animations, caching)

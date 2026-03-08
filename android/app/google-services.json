@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "541133398477",
+    "project_id": "lust-meter-app-01",
+    "storage_bucket": "lust-meter-app-01.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:541133398477:android:b2a5fbedbc3bcdf6d66484",
+        "android_client_info": {
+          "package_name": "com.lustmeter.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBXnmrRMEeoTS-2VH5PSHftIt7q7vTdsE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
