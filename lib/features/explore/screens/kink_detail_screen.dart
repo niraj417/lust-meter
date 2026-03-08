@@ -21,7 +21,6 @@ class _KinkDetailScreenState extends State<KinkDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _isTried = widget.kink.isTried;
   }
 
   Color _parseColor(String hex) {

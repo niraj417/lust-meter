@@ -5,6 +5,7 @@ import '../core/models/doctor_model.dart';
 import '../core/models/game_session_model.dart';
 import '../core/models/kink_interaction_model.dart';
 import '../core/models/message_model.dart';
+import '../core/models/partner_connection_model.dart';
 import '../core/models/user_model.dart';
 
 class DatabaseService {

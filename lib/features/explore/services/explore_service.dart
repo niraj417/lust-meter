@@ -29,7 +29,7 @@ class ExploreService {
           {'title': 'Sex Toys', 'description': 'Incorporating vibrators, dildos, and other pleasure devices', 'category': 'Fetish', 'likes': 467, 'iconName': 'toys', 'colorHex': '21C990'},
           {'title': 'Dirty Talk', 'description': 'Verbal communication of desires and fantasies', 'category': 'Roleplay', 'likes': 445, 'iconName': 'chat', 'colorHex': 'FF8C42'},
           {'title': 'Praise Kink', 'description': 'Being aroused by compliments and positive affirmations', 'category': 'Power Play', 'likes': 423, 'iconName': 'star', 'colorHex': '9B30FF'},
-          {'title': 'Massage & Body Worship', 'description': 'Sensual touching and appreciation of partner\\'s body', 'category': 'Sensory', 'likes': 412, 'iconName': 'spa', 'colorHex': 'E63950'},
+          {'title': 'Massage & Body Worship', 'description': "Sensual touching and appreciation of partner's body", 'category': 'Sensory', 'likes': 412, 'iconName': 'spa', 'colorHex': 'E63950'},
           {'title': 'Light Bondage', 'description': 'Using silk ties, cuffs, or soft ropes playfully', 'category': 'Bondage', 'likes': 380, 'iconName': 'link', 'colorHex': '30B0FF'},
         ];
 
