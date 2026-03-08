@@ -5,6 +5,42 @@ class GeminiService {
   static const String _baseUrl =
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
+  static String? _staticApiKey;
+
+  /// Initialize the service with an API key
+  static void init(String apiKey) {
+    _staticApiKey = apiKey;
+  }
+
+  /// Static method to generate text, as used in HomeScreen
+  static Future<String> generateText(String prompt) async {
+    final apiKey = _staticApiKey ?? 'REPLACE_WITH_YOUR_GEMINI_API_KEY';
+    final response = await http.post(
+      Uri.parse('$_baseUrl?key=$apiKey'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'contents': [
+          {
+            'parts': [
+              {'text': prompt}
+            ]
+          }
+        ],
+        'generationConfig': {
+          'temperature': 0.85,
+          'maxOutputTokens': 512,
+        }
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['candidates'][0]['content']['parts'][0]['text'] as String;
+    } else {
+      throw Exception('Gemini API error: ${response.statusCode}');
+    }
+  }
+
   // Inject your API key here or load from env/secure storage
   final String _apiKey;
 
