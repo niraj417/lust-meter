@@ -198,7 +198,7 @@ class _ChallengesTab extends StatelessWidget {
     _Challenge('7-Day Touch Challenge', '🤝', 'Hold hands for at least 30 min every day this week.', '7 Days', Color(0xFFE63950)),
     _Challenge('Love Language Week', '💌', 'Express love in a different language each day — words, touch, gifts, time, service.', '7 Days', Color(0xFF9B30FF)),
     _Challenge('Screen-Free Evening', '📵', 'Spend one full evening with no phones, no TV — just each other.', '1 Day', Color(0xFFFF8C42)),
-    _Challenge('Cook a New Dish Together', '🍳', 'Pick a cuisine you\\'ve never tried and cook it from scratch together.', '1 Day', Color(0xFF30B0FF)),
+    _Challenge('Cook a New Dish Together', '🍳', "Pick a cuisine you've never tried and cook it from scratch together.", '1 Day', Color(0xFF30B0FF)),
     _Challenge('Memory Jar', '🫙', 'Both write down 10 favourite memories of each other. Read them aloud together.', '2 Days', Color(0xFF4DFF88)),
   ];
 
