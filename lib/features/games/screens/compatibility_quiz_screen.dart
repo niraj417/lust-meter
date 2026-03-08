@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:math';
+import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/models/game_session_model.dart';
+import '../../../services/database_service.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class CompatibilityQuizScreen extends StatefulWidget {
   const CompatibilityQuizScreen({super.key});
@@ -16,8 +20,9 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
   bool _isLoading = false;
   final Map<int, int> _answers = {};
   
-  // Mock questions for now - ideally these could come from Gemini too
-  final List<Map<String, dynamic>> _questions = [
+  bool _isSpicyMode = false;
+
+  final List<Map<String, dynamic>> _normalQuestions = [
     {
       'question': 'How do you prefer to spend a romantic evening?',
       'options': ['Quiet night in with a movie', 'Fancy dinner and drinks', 'Adventurous outdoor activity', 'A playful game night'],
@@ -40,8 +45,33 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
     },
   ];
 
+  final List<Map<String, dynamic>> _spicyQuestions = [
+    {
+      'question': 'What is your favorite type of foreplay?',
+      'options': ['Slow hands and teasing', 'Words and dirty talk', 'Something a bit rough', 'Toys and accessories'],
+    },
+    {
+      'question': 'Which location excites you the most?',
+      'options': ['In our comfortable bed', 'In the shower/bath', 'Somewhere public or risky', 'On the couch/floor'],
+    },
+    {
+      'question': 'How do you feel about introducing toys?',
+      'options': ['Already love them', 'Open to exploring together', 'Curious but hesitant', 'Prefer just us'],
+    },
+    {
+      'question': 'What is the most turning on for you?',
+      'options': ['Eye contact and deep connection', 'Dominance and submission dynamics', 'Visual stimulation (lingerie/outfits)', 'Unexpected spontaneity'],
+    },
+    {
+      'question': 'How adventurous are your fantasies on a scale?',
+      'options': ['Vanilla and sweet', 'Willing to try some spice', 'Very open-minded', 'Extremely wild and adventurous'],
+    },
+  ];
+
+  List<Map<String, dynamic>> get _currentQuestions => _isSpicyMode ? _spicyQuestions : _normalQuestions;
+
   void _nextPage() {
-    if (_currentIndex < _questions.length - 1) {
+    if (_currentIndex < _currentQuestions.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
@@ -59,6 +89,21 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
     
     if (!mounted) return;
     
+    // --- Record Game Session for Points ---
+    final authData = context.read<AuthProvider>();
+    if (authData.user != null) {
+      final uid = authData.user!.uid;
+      try {
+        await DatabaseService().recordGameSession(GameSessionModel(
+          sessionId: DateTime.now().millisecondsSinceEpoch.toString(),
+          gameType: 'compatibility_quiz',
+          participants: [uid],
+          pointsAwarded: 10,
+          playedAt: DateTime.now(),
+        ));
+      } catch (_) {}
+    }
+
     // Weighted random score for demo
     final score = 75 + Random().nextInt(20);
     
@@ -84,6 +129,28 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
           icon: const Icon(Icons.close_rounded),
           onPressed: () => context.pop(),
         ),
+        actions: [
+          Row(
+            children: [
+              const Text('Spicy 🔥', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+              Switch(
+                value: _isSpicyMode,
+                activeColor: AppColors.primary,
+                onChanged: _isLoading
+                    ? null
+                    : (val) {
+                        setState(() {
+                          _isSpicyMode = val;
+                          _currentIndex = 0;
+                          _answers.clear();
+                          _pageController.jumpToPage(0);
+                        });
+                      },
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Stack(
         children: [
@@ -91,7 +158,7 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
             children: [
               // Progress bar
               LinearProgressIndicator(
-                value: (_currentIndex + 1) / _questions.length,
+                value: (_currentIndex + 1) / _currentQuestions.length,
                 backgroundColor: AppColors.surface,
                 valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
                 minHeight: 6,
@@ -101,9 +168,9 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
                   controller: _pageController,
                   physics: const NeverScrollableScrollPhysics(),
                   onPageChanged: (index) => setState(() => _currentIndex = index),
-                  itemCount: _questions.length,
+                  itemCount: _currentQuestions.length,
                   itemBuilder: (context, index) {
-                    final q = _questions[index];
+                    final q = _currentQuestions[index];
                     return Padding(
                       padding: const EdgeInsets.all(24.0),
                       child: Column(
@@ -111,7 +178,7 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
                         children: [
                           const SizedBox(height: 20),
                           Text(
-                            'Question ${index + 1} of ${_questions.length}',
+                            'Question ${index + 1} of ${_currentQuestions.length}',
                             style: const TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 14,

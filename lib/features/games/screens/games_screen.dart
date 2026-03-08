@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/app_constants.dart';
 import 'truth_or_dare_screen.dart';
 import 'fantasy_cards_screen.dart';
 import 'spin_wheel_screen.dart';
@@ -23,7 +25,7 @@ class GamesScreen extends StatelessWidget {
             title: 'Truth or Dare',
             subtitle: 'Spin the bottle and face daring challenges',
             gradient: AppColors.primaryGradient,
-            onTap: () => _push(context, const TruthOrDareScreen()),
+            onTap: () => context.push(AppRoutes.truthOrDare),
           ),
           const SizedBox(height: 16),
           _GameCard(
@@ -31,7 +33,7 @@ class GamesScreen extends StatelessWidget {
             title: 'Fantasy Cards',
             subtitle: 'Swipe through your deepest desires',
             gradient: AppColors.purpleGradient,
-            onTap: () => _push(context, const FantasyCardsScreen()),
+            onTap: () => context.push(AppRoutes.fantasyCards),
           ),
           const SizedBox(height: 16),
           _GameCard(
@@ -39,7 +41,7 @@ class GamesScreen extends StatelessWidget {
             title: 'Spin The Wheel',
             subtitle: 'Let fate decide your next adventure',
             gradient: AppColors.fireGradient,
-            onTap: () => _push(context, const SpinWheelScreen()),
+            onTap: () => context.push(AppRoutes.spinWheel),
           ),
           const SizedBox(height: 16),
           _GameCard(
@@ -51,15 +53,11 @@ class GamesScreen extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            onTap: () {},
+            onTap: () => context.push(AppRoutes.compatibilityQuiz),
           ),
         ],
       ),
     );
-  }
-
-  void _push(BuildContext ctx, Widget screen) {
-    Navigator.push(ctx, MaterialPageRoute(builder: (_) => screen));
   }
 }
 

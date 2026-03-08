@@ -1,7 +1,15 @@
 import 'dart:math';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/models/partner_connection_model.dart';
+import '../../../core/constants/app_constants.dart';
+import '../../../services/database_service.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../../services/database_service.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class PartnerScreen extends StatefulWidget {
   const PartnerScreen({super.key});
@@ -11,37 +19,61 @@ class PartnerScreen extends StatefulWidget {
 }
 
 class _PartnerScreenState extends State<PartnerScreen> {
-  // Simulated: no partner connected yet
-  bool _hasPartner = false;
-  final String _myCode = _generateCode();
+  String? _myCode;
   final _inviteCtrl = TextEditingController();
   bool _codeCopied = false;
 
-  static String _generateCode() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    final r = Random.secure();
-    return List.generate(6, (_) => chars[r.nextInt(chars.length)]).join();
+  @override
+  void initState() {
+    super.initState();
+    _loadMyCode();
+  }
+
+  Future<void> _loadMyCode() async {
+    final uid = context.read<AuthProvider>().user?.uid;
+    if (uid != null) {
+      final code = await DatabaseService().getOrCreateInviteCode(uid);
+      if (mounted) setState(() => _myCode = code);
+    }
   }
 
   void _copyCode() {
-    Clipboard.setData(ClipboardData(text: _myCode));
+    if (_myCode == null) return;
+    Clipboard.setData(ClipboardData(text: _myCode!));
     setState(() => _codeCopied = true);
     Future.delayed(const Duration(seconds: 2),
         () => mounted ? setState(() => _codeCopied = false) : null);
   }
 
-  void _sendInvite() {
+  Future<void> _sendInvite() async {
     final code = _inviteCtrl.text.trim().toUpperCase();
     if (code.length == 6) {
-      // TODO: Firebase lookup & partner link
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Invite sent to code $code!'),
-          backgroundColor: AppColors.primary,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+      final uid = context.read<AuthProvider>().user?.uid;
+      if (uid == null) return;
+      try {
+        await DatabaseService().connectWithPartner(uid, code);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Partner Connected! 🎉'),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.toString().replaceAll('Exception: ', '')),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -52,26 +84,43 @@ class _PartnerScreenState extends State<PartnerScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+    final uid = context.watch<AuthProvider>().user?.uid;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Partner 💑'),
         backgroundColor: AppColors.background,
       ),
-      body: _hasPartner ? _Connected() : _NotConnected(
-        myCode: _myCode,
-        codeCopied: _codeCopied,
-        inviteCtrl: _inviteCtrl,
-        onCopy: _copyCode,
-        onSend: _sendInvite,
-      ),
+      body: uid == null
+          ? const Center(child: CircularProgressIndicator())
+          : StreamBuilder<String?>(
+              stream: DatabaseService().getPartnerIdStream(uid),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final hasPartner = snapshot.data != null;
+
+                if (hasPartner) {
+                  return _Connected(uid: uid);
+                }
+
+                return _NotConnected(
+                  myCode: _myCode,
+                  codeCopied: _codeCopied,
+                  inviteCtrl: _inviteCtrl,
+                  onCopy: _copyCode,
+                  onSend: _sendInvite,
+                );
+              },
+            ),
     );
   }
 }
 
 class _NotConnected extends StatelessWidget {
-  final String myCode;
+  final String? myCode;
   final bool codeCopied;
   final TextEditingController inviteCtrl;
   final VoidCallback onCopy;
@@ -157,7 +206,7 @@ class _NotConnected extends StatelessWidget {
                   shaderCallback: (b) =>
                       AppColors.fireGradient.createShader(b),
                   child: Text(
-                    myCode,
+                    myCode ?? '------',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 36,
@@ -276,11 +325,65 @@ class _NotConnected extends StatelessWidget {
 }
 
 class _Connected extends StatelessWidget {
-  const _Connected();
+  final String uid;
+  const _Connected({required this.uid});
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Partner Connected! 🎉'));
+    return StreamBuilder<PartnerConnectionModel?>(
+      stream: DatabaseService().getPartnerConnectionStream(uid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final connection = snapshot.data;
+        if (connection == null) {
+          return const Center(child: Text('Connecting...'));
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.favorite, size: 80, color: AppColors.primary),
+              const SizedBox(height: 24),
+              const Text(
+                'Partner Connected! 🎉',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'You and your partner are now linked.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 48),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.chat_bubble_outline),
+                label: const Text('Open Couples Chat'),
+                onPressed: () {
+                  context.push(AppConstants.messagesCollection); // wait, should use AppRoutes.chat
+                  context.push('/chat/${connection.connectionId}');
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 

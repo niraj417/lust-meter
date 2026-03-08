@@ -1,6 +1,10 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/models/game_session_model.dart';
+import '../../../services/database_service.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class SpinWheelScreen extends StatefulWidget {
   const SpinWheelScreen({super.key});
@@ -17,7 +21,9 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
   String? _result;
   double _totalRotation = 0;
 
-  static const List<_WheelSegment> _segments = [
+  bool _isSpicyMode = false;
+
+  static const List<_WheelSegment> _normalSegments = [
     _WheelSegment('Massage 💆', Color(0xFFE63950)),
     _WheelSegment('Movie Night 🎬', Color(0xFF9B30FF)),
     _WheelSegment('Cook Together 🍳', Color(0xFFFF8C42)),
@@ -27,6 +33,19 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
     _WheelSegment('Dance 💃', Color(0xFFFF6B9D)),
     _WheelSegment('Love Letter 💌', Color(0xFFFFD700)),
   ];
+
+  static const List<_WheelSegment> _spicySegments = [
+    _WheelSegment('Strip Tease 🥵', Color(0xFFD50000)),
+    _WheelSegment('Sensual 💦', Color(0xFFC51162)),
+    _WheelSegment('Spicy Truth 😈', Color(0xFFAA00FF)),
+    _WheelSegment('Spicy Dare 🌶️', Color(0xFFFF3D00)),
+    _WheelSegment('Blindfold 🙈', Color(0xFF212121)),
+    _WheelSegment('Roleplay 🎭', Color(0xFF6200EA)),
+    _WheelSegment('Take a shot 🥃', Color(0xFFFF6D00)),
+    _WheelSegment('Kiss anywhere 💋', Color(0xFFE65100)),
+  ];
+
+  List<_WheelSegment> get _currentSegments => _isSpicyMode ? _spicySegments : _normalSegments;
 
   @override
   void initState() {
@@ -44,7 +63,8 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
     if (_isSpinning) return;
     final random = Random();
     final extraSpins = (5 + random.nextInt(5)) * 2 * pi;
-    final segmentAngle = 2 * pi / _segments.length;
+    final currentSegments = _currentSegments;
+    final segmentAngle = 2 * pi / currentSegments.length;
     final landingOffset = random.nextDouble() * 2 * pi;
 
     final targetRotation = _totalRotation + extraSpins + landingOffset;
@@ -65,18 +85,32 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
     });
 
     _controller.reset();
-    _controller.forward().then((_) {
-      // Determine which segment is at the top (pointer)
-      final normalized =
-          targetRotation % (2 * pi);
-      final idx =
-          ((_segments.length - (normalized / segmentAngle).floor()) %
-                  _segments.length)
-              .toInt();
+    _controller.forward().then((_) async {
+      final currentSegments = _currentSegments;
+      final normalized = (2 * pi - (targetRotation % (2 * pi))) % (2 * pi);
+      final idx = (normalized / segmentAngle).floor();
+      
       setState(() {
         _isSpinning = false;
-        _result = _segments[idx % _segments.length].label;
+        _result = currentSegments[idx % currentSegments.length].label;
       });
+
+      // --- Record Game Session for Points ---
+      if (mounted) {
+        final authData = context.read<AuthProvider>();
+        if (authData.user != null) {
+          final uid = authData.user!.uid;
+          try {
+            await DatabaseService().recordGameSession(GameSessionModel(
+              sessionId: DateTime.now().millisecondsSinceEpoch.toString(),
+              gameType: 'spin_wheel',
+              participants: [uid],
+              pointsAwarded: 5,
+              playedAt: DateTime.now(),
+            ));
+          } catch (_) {}
+        }
+      }
     });
   }
 
@@ -88,6 +122,26 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
         title: const Text('Spin the Wheel 🌀'),
         backgroundColor: AppColors.background,
         leading: const BackButton(),
+        actions: [
+          Row(
+            children: [
+              const Text('Spicy 🔥', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+              Switch(
+                value: _isSpicyMode,
+                activeColor: AppColors.primary,
+                onChanged: _isSpinning
+                    ? null
+                    : (val) {
+                        setState(() {
+                          _isSpicyMode = val;
+                          _result = null;
+                        });
+                      },
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -116,7 +170,7 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
                     : _totalRotation;
                 return Transform.rotate(
                   angle: angle,
-                  child: const _WheelWidget(segments: _segments),
+                  child: _WheelWidget(segments: _currentSegments),
                 );
               },
             ),

@@ -10,6 +10,10 @@ class AppConstants {
   static const positionsCollection = 'positions';
   static const challengesCollection = 'challenges';
   static const kinksCollection = 'kinks';
+  static const kinkInteractionsCollection = 'kink_interactions';
+  static const doctorsCollection = 'doctors';
+  static const messagesCollection = 'messages'; // Subcollection
+  static const gameSessionsCollection = 'game_sessions';
 
   // Firestore Fields
   static const fieldUid = 'uid';
@@ -46,4 +50,5 @@ class AppRoutes {
   static const rewards = '/profile/rewards';
   static const compatibilityQuiz = '/compatibility-quiz';
   static const consultation = '/consultation';
+  static const chat = '/chat/:connectionId';
 }

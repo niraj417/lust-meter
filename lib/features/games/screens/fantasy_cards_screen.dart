@@ -14,7 +14,9 @@ class _FantasyCardsScreenState extends State<FantasyCardsScreen> {
   int _liked = 0;
   int _passed = 0;
 
-  static const List<_FantasyCard> _cards = [
+  bool _isSpicyMode = false;
+
+  static const List<_FantasyCard> _normalCards = [
     _FantasyCard(
       emoji: '🌹',
       title: 'Candlelit Dinner',
@@ -73,6 +75,41 @@ class _FantasyCardsScreenState extends State<FantasyCardsScreen> {
     ),
   ];
 
+  static const List<_FantasyCard> _spicyCards = [
+    _FantasyCard(
+      emoji: '🌶️',
+      title: 'Sensual Striptease',
+      description: 'Put on some music and take turns doing a slow, sensual striptease.',
+      color: Color(0xFFD50000),
+    ),
+    _FantasyCard(
+      emoji: '💋',
+      title: 'Blindfolded Tasting',
+      description: 'Blindfold your partner and feed them various treats. Let them guess what they are tasting.',
+      color: Color(0xFFC51162),
+    ),
+    _FantasyCard(
+      emoji: '🧊',
+      title: 'Ice Play',
+      description: 'Take an ice cube and slowly trace it over your partner\'s body.',
+      color: Color(0xFF304FFE),
+    ),
+    _FantasyCard(
+      emoji: '🤫',
+      title: 'Silent Pleasure',
+      description: 'Try an intimate act in complete silence. No words allowed, only body language.',
+      color: Color(0xFF00C853),
+    ),
+    _FantasyCard(
+      emoji: '🚪',
+      title: 'Public Secret',
+      description: 'Wear something revealing underneath your normal clothes and go out in public together.',
+      color: Color(0xFFFF6D00),
+    ),
+  ];
+
+  List<_FantasyCard> get _currentCards => _isSpicyMode ? _spicyCards : _normalCards;
+
   @override
   void initState() {
     super.initState();
@@ -93,6 +130,28 @@ class _FantasyCardsScreenState extends State<FantasyCardsScreen> {
         title: const Text('Fantasy Cards 🃏'),
         backgroundColor: AppColors.background,
         leading: const BackButton(),
+        actions: [
+          Row(
+            children: [
+              const Text('Spicy 🔥', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+              Switch(
+                value: _isSpicyMode,
+                activeColor: AppColors.primary,
+                onChanged: (val) {
+                  setState(() {
+                    _isSpicyMode = val;
+                    _liked = 0;
+                    _passed = 0;
+                    // Re-initialize controller to reset swipes
+                    _controller.dispose();
+                    _controller = CardSwiperController();
+                  });
+                },
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Column(
         children: [
@@ -119,8 +178,9 @@ class _FantasyCardsScreenState extends State<FantasyCardsScreen> {
           // Card swiper
           Expanded(
             child: CardSwiper(
+              key: ValueKey(_isSpicyMode),
               controller: _controller,
-              cardsCount: _cards.length,
+              cardsCount: _currentCards.length,
               onSwipe: (prev, curr, dir) {
                 setState(() {
                   if (dir == CardSwiperDirection.right) {
@@ -135,7 +195,8 @@ class _FantasyCardsScreenState extends State<FantasyCardsScreen> {
               backCardOffset: const Offset(0, 40),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               cardBuilder: (ctx, idx, percentX, percentY) {
-                final card = _cards[idx % _cards.length];
+                if (_currentCards.isEmpty) return const SizedBox();
+                final card = _currentCards[idx % _currentCards.length];
                 return _FantasyCardWidget(card: card);
               },
             ),
@@ -192,20 +253,12 @@ class _FantasyCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            card.color.withAlpha(200),
-            card.color.withAlpha(100),
-            AppColors.surface,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: card.color,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: card.color.withAlpha(80), width: 1.5),
+        border: Border.all(color: Colors.white.withAlpha(50), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: card.color.withAlpha(60),
+            color: card.color.withAlpha(80),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),

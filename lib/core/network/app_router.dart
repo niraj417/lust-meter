@@ -11,7 +11,11 @@ import '../../features/explore/screens/explore_screen.dart';
 import '../../features/partner/screens/partner_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/games/screens/compatibility_quiz_screen.dart';
+import '../../features/games/screens/fantasy_cards_screen.dart';
+import '../../features/games/screens/spin_wheel_screen.dart';
+import '../../features/games/screens/truth_or_dare_screen.dart';
 import '../../features/consultation/screens/consultation_screen.dart';
+import '../../features/partner/screens/chat_screen.dart';
 import '../widgets/app_shell.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -42,8 +46,27 @@ final GoRouter appRouter = GoRouter(
       builder: (ctx, state) => const CompatibilityQuizScreen(),
     ),
     GoRoute(
+      path: AppRoutes.truthOrDare,
+      builder: (ctx, state) => const TruthOrDareScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.fantasyCards,
+      builder: (ctx, state) => const FantasyCardsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.spinWheel,
+      builder: (ctx, state) => const SpinWheelScreen(),
+    ),
+    GoRoute(
       path: AppRoutes.consultation,
       builder: (ctx, state) => const ConsultationScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.chat,
+      builder: (ctx, state) {
+        final connectionId = state.pathParameters['connectionId']!;
+        return ChatScreen(connectionId: connectionId);
+      },
     ),
     ShellRoute(
       navigatorKey: _shellNavigatorKey,

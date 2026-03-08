@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/models/doctor_model.dart';
+import '../../../services/database_service.dart';
 
 class ConsultationScreen extends StatelessWidget {
   const ConsultationScreen({super.key});
@@ -16,53 +18,67 @@ class ConsultationScreen extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          const Text(
-            'Professional Guidance',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              fontFamily: 'Inter',
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Connect with verified experts to deepen your emotional and physical connection.',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 15,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 32),
-          _ExpertCard(
-            name: 'Dr. Sarah Mitchell',
-            specialty: 'Relationship Counselor',
-            rating: 4.9,
-            price: '\$80/session',
-            imageUrl: 'https://i.pravatar.cc/150?u=sarah',
-            available: true,
-          ),
-          _ExpertCard(
-            name: 'Mark Henderson',
-            specialty: 'Intimacy & Tantra Coach',
-            rating: 4.8,
-            price: '\$65/session',
-            imageUrl: 'https://i.pravatar.cc/150?u=mark',
-            available: false,
-          ),
-          _ExpertCard(
-            name: 'Elena Rodriguez',
-            specialty: 'Sexual Health Therapist',
-            rating: 5.0,
-            price: '\$95/session',
-            imageUrl: 'https://i.pravatar.cc/150?u=elena',
-            available: true,
-          ),
-        ],
+      body: FutureBuilder<List<DoctorModel>>(
+        future: DatabaseService().getDoctors(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(
+              child: Text(
+                'No experts available at the moment.\nPlease try again later.',
+                style: TextStyle(color: AppColors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+
+          final doctors = snapshot.data!;
+          return ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: doctors.length + 1, // +1 for the header
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Professional Guidance',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Connect with verified experts to deepen your emotional and physical connection.',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 15,
+                        height: 1.5,
+                      ),
+                    ),
+                    SizedBox(height: 32),
+                  ],
+                );
+              }
+
+              final doc = doctors[index - 1];
+              return _ExpertCard(
+                name: doc.name,
+                specialty: doc.specialty,
+                rating: doc.rating,
+                // The mock script doesn't have prices, so add a default or parse.
+                price: '\$80/session',
+                imageUrl: doc.photoUrl,
+                available: doc.isOnline,
+              );
+            },
+          );
+        },
       ),
     );
   }

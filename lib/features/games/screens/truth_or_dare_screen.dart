@@ -1,6 +1,10 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/models/game_session_model.dart';
+import '../../../services/database_service.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class TruthOrDareScreen extends StatefulWidget {
   const TruthOrDareScreen({super.key});
@@ -16,8 +20,9 @@ class _TruthOrDareScreenState extends State<TruthOrDareScreen>
   bool _isSpinning = false;
   String? _currentCard;
   String _mode = 'truth'; // 'truth' or 'dare'
+  bool _isSpicyMode = false;
 
-  static const _truths = [
+  static const _normalTruths = [
     'What is your most adventurous fantasy?',
     'What is something you have always wanted to try with me?',
     'When did you first realize you had feelings for me?',
@@ -37,6 +42,28 @@ class _TruthOrDareScreenState extends State<TruthOrDareScreen>
     'Recreate your first kiss.',
     'Tell your partner three things you find irresistible about them.',
     'Dance to one song of your partner\'s choice right now.',
+  ];
+
+  static const _spicyTruths = [
+    'What is your wildest undiscovered fantasy?',
+    'Have you ever had a dream about me? What happened?',
+    'What is your favorite part of my body?',
+    'If we had a free pass for a night, what would you ask for?',
+    'Where is the public place you most want to get intimate?',
+    'What outfit of mine turns you on the most?',
+    'What is your biggest turn on and turn off?',
+    'What is the naughtiest text you have ever sent?',
+  ];
+
+  static const _spicyDares = [
+    'Give me a 60-second lap dance.',
+    'Remove one piece of clothing right now.',
+    'Kiss my neck passionately for 30 seconds.',
+    'Show me the most provocative photo on your phone.',
+    'Send a risky text to me right now.',
+    'Blindfold me and use a feather or ice cube on my skin.',
+    'Whisper your deepest, darkest fantasy in my ear.',
+    'Let me take off one item of your clothing with just my teeth.',
   ];
 
   @override
@@ -63,12 +90,30 @@ class _TruthOrDareScreenState extends State<TruthOrDareScreen>
       _currentCard = null;
     });
     _spinController.reset();
-    _spinController.forward().then((_) {
-      final list = _mode == 'truth' ? _truths : _dares;
+    _spinController.forward().then((_) async {
+      final list = _mode == 'truth'
+          ? (_isSpicyMode ? _spicyTruths : _normalTruths)
+          : (_isSpicyMode ? _spicyDares : _normalDares);
       setState(() {
         _isSpinning = false;
         _currentCard = list[Random().nextInt(list.length)];
       });
+      // --- Record Game Session for Points ---
+      if (mounted) {
+        final authData = context.read<AuthProvider>();
+        if (authData.user != null) {
+          final uid = authData.user!.uid;
+          try {
+            await DatabaseService().recordGameSession(GameSessionModel(
+              sessionId: DateTime.now().millisecondsSinceEpoch.toString(),
+              gameType: _mode,
+              participants: [uid],
+              pointsAwarded: 5,
+              playedAt: DateTime.now(),
+            ));
+          } catch (_) {}
+        }
+      }
     });
   }
 
@@ -80,6 +125,26 @@ class _TruthOrDareScreenState extends State<TruthOrDareScreen>
         title: const Text('Truth or Dare 🍾'),
         backgroundColor: AppColors.background,
         leading: const BackButton(),
+        actions: [
+          Row(
+            children: [
+              const Text('Spicy 🔥', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+              Switch(
+                value: _isSpicyMode,
+                activeColor: AppColors.primary,
+                onChanged: _isSpinning
+                    ? null
+                    : (val) {
+                        setState(() {
+                          _isSpicyMode = val;
+                          _currentCard = null;
+                        });
+                      },
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),

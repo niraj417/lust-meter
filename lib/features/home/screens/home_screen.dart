@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../services/gemini_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -261,11 +262,11 @@ class _AiTipCard extends StatelessWidget {
 }
 
 class _QuickActionsGrid extends StatelessWidget {
-  final _actions = const [
-    _ActionItem(icon: '🎯', label: 'Quiz', color: Color(0xFFE63950), route: '/compatibility-quiz'),
-    _ActionItem(icon: '🃏', label: 'Fantasy\nCards', color: Color(0xFF9B30FF), route: '/fantasy-cards'),
-    _ActionItem(icon: '🌀', label: 'Spin\nWheel', color: Color(0xFFFF8C42), route: '/spin-wheel'),
-    _ActionItem(icon: '💬', label: 'Consult', color: Color(0xFF30B0FF), route: '/consultation'),
+  final List<_ActionItem> _actions = const [
+    _ActionItem(icon: '🎯', label: 'Quiz', color: Color(0xFFE63950), route: AppRoutes.compatibilityQuiz),
+    _ActionItem(icon: '🃏', label: 'Fantasy\nCards', color: Color(0xFF9B30FF), route: AppRoutes.fantasyCards),
+    _ActionItem(icon: '🌀', label: 'Spin\nWheel', color: Color(0xFFFF8C42), route: AppRoutes.spinWheel),
+    _ActionItem(icon: '💬', label: 'Consult', color: Color(0xFF30B0FF), route: AppRoutes.consultation),
   ];
 
   @override
