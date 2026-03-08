@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import 'dart:math';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/constants/app_constants.dart';
-import '../../../services/gemini_service.dart';
-import '../../auth/providers/auth_provider.dart';
 
 class CompatibilityQuizScreen extends StatefulWidget {
   const CompatibilityQuizScreen({super.key});

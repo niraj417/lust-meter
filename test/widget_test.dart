@@ -13,7 +13,9 @@ import 'package:lust_meter/main.dart';
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(
+      const ProviderScope(child: LustMeterApp()), // Using ProviderScope for MultiProvider in real app, might just need LustMeterApp or Provider wrapper if the test needs it.
+    );
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);
