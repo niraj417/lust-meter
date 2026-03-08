@@ -84,6 +84,7 @@ class _PartnerScreenState extends State<PartnerScreen> {
   }
 
   @override
+  Widget build(BuildContext context) {
     final uid = context.watch<AuthProvider>().user?.uid;
 
     return Scaffold(

@@ -33,7 +33,7 @@ class _TruthOrDareScreenState extends State<TruthOrDareScreen>
     'What is your biggest relationship fear?',
   ];
 
-  static const _dares = [
+  static const _normalDares = [
     'Give your partner a 60-second massage on the spot.',
     'Whisper something sweet in your partner\'s ear.',
     'Do your best impression of your partner.',
