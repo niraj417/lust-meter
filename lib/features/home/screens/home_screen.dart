@@ -3,7 +3,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../services/gemini_service.dart';
-
+import '../../../services/database_service.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../../core/models/user_model.dart';
+import 'package:provider/provider.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -18,14 +21,36 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchAiTip();
+    _initData();
   }
 
-  Future<void> _fetchAiTip() async {
+  Future<void> _initData() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.user;
+    UserModel? userModel;
+    if (user != null) {
+      userModel = await DatabaseService().getUser(user.uid);
+    }
+    await _fetchAiTip(userModel);
+  }
+
+  Future<void> _fetchAiTip(UserModel? userModel) async {
     try {
-      final tip = await GeminiService.generateText(
-        'Generate a short, romantic, and actionable intimacy tip for a couple in a long-term relationship. Max 2 sentences.',
-      );
+      String tip;
+      if (userModel != null) {
+        final geminiService = GeminiService(apiKey: 'AIzaSyAZu2a2p5vLsMgB5cDjgWzSJTEAsLLoLCE');
+        tip = await geminiService.generateRelationshipTip(
+          userName: userModel.name,
+          lustScore: userModel.lustScore,
+          emotionalScore: userModel.emotionalScore,
+          physicalScore: userModel.physicalScore,
+        );
+      } else {
+        tip = await GeminiService.generateText(
+          'Generate a short, romantic, and actionable intimacy tip for a couple in a long-term relationship. Max 2 sentences.',
+        );
+      }
+      
       if (mounted) {
         setState(() {
           _aiTip = tip;
@@ -44,29 +69,41 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final user = authProvider.user;
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(context),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                const SizedBox(height: 24),
-                _LustScoreCard(),
-                const SizedBox(height: 20),
-                _AiTipCard(tip: _aiTip, isLoading: _isLoadingTip),
-                const SizedBox(height: 20),
-                _QuickActionsGrid(),
-                const SizedBox(height: 20),
-                _StreakCard(),
-                const SizedBox(height: 100),
-              ]),
+      body: user == null
+          ? const Center(child: CircularProgressIndicator())
+          : StreamBuilder<UserModel?>(
+              stream: DatabaseService().getUserStream(user.uid),
+              builder: (context, snapshot) {
+                final userModel = snapshot.data;
+                
+                return CustomScrollView(
+                  slivers: [
+                    _buildAppBar(context),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          const SizedBox(height: 24),
+                          _LustScoreCard(userModel: userModel),
+                          const SizedBox(height: 20),
+                          _AiTipCard(tip: _aiTip, isLoading: _isLoadingTip),
+                          const SizedBox(height: 20),
+                          _QuickActionsGrid(),
+                          const SizedBox(height: 20),
+                          _StreakCard(userModel: userModel),
+                          const SizedBox(height: 100),
+                        ]),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -100,8 +137,16 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _LustScoreCard extends StatelessWidget {
+  final UserModel? userModel;
+  const _LustScoreCard({this.userModel});
+
   @override
   Widget build(BuildContext context) {
+    final score = userModel?.lustScore ?? 0;
+    final emotionalScore = userModel?.emotionalScore ?? 0;
+    final physicalScore = userModel?.physicalScore ?? 0;
+    final bondScore = userModel?.bondScore ?? 0;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -122,29 +167,29 @@ class _LustScoreCard extends StatelessWidget {
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text('Your Lust Score', style: TextStyle(
+                children: [
+                  const Text('Your Lust Score', style: TextStyle(
                     color: Colors.white70, fontSize: 13, fontFamily: 'Inter',
                   )),
-                  SizedBox(height: 4),
-                  Text('78', style: TextStyle(
+                  const SizedBox(height: 4),
+                  Text('$score', style: const TextStyle(
                     color: Colors.white, fontSize: 56,
                     fontWeight: FontWeight.w900, fontFamily: 'Inter',
                     height: 1,
                   )),
                 ],
               ),
-              _ScoreRing(score: 0.78, emoji: '🔥'),
+              _ScoreRing(score: score / 100.0, emoji: '🔥'),
             ],
           ),
           const SizedBox(height: 16),
           Row(
             children: [
-              _ScorePill(label: 'Emotional', value: 82, color: Colors.purpleAccent),
+              _ScorePill(label: 'Emotional', value: emotionalScore, color: Colors.purpleAccent),
               const SizedBox(width: 10),
-              _ScorePill(label: 'Physical', value: 74, color: Colors.orangeAccent),
+              _ScorePill(label: 'Physical', value: physicalScore, color: Colors.orangeAccent),
               const SizedBox(width: 10),
-              _ScorePill(label: 'Bond', value: 91, color: Colors.greenAccent),
+              _ScorePill(label: 'Bond', value: bondScore, color: Colors.greenAccent),
             ],
           ),
         ],
@@ -328,8 +373,13 @@ class _ActionCard extends StatelessWidget {
 }
 
 class _StreakCard extends StatelessWidget {
+  final UserModel? userModel;
+  const _StreakCard({this.userModel});
+
   @override
   Widget build(BuildContext context) {
+    final streak = userModel?.dailyStreak ?? 0;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -341,13 +391,13 @@ class _StreakCard extends StatelessWidget {
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text('🔥 Daily Streak', style: TextStyle(
+            children: [
+              const Text('🔥 Daily Streak', style: TextStyle(
                 fontFamily: 'Inter', fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary, fontSize: 16,
               )),
-              SizedBox(height: 4),
-              Text('5 days in a row! Keep it up 💪', style: TextStyle(
+              const SizedBox(height: 4),
+              Text(streak > 0 ? '$streak days in a row! Keep it up 💪' : 'Start your daily streak today! 💪', style: const TextStyle(
                 fontFamily: 'Inter', color: AppColors.textSecondary, fontSize: 13,
               )),
             ],
@@ -359,7 +409,7 @@ class _StreakCard extends StatelessWidget {
             gradient: AppColors.primaryGradient,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Text('5 🔥', style: TextStyle(
+          child: Text('$streak 🔥', style: const TextStyle(
             color: Colors.white, fontWeight: FontWeight.w800,
             fontFamily: 'Inter', fontSize: 18,
           )),

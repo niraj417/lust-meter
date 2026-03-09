@@ -22,6 +22,13 @@ class DatabaseService {
     return null;
   }
 
+  Stream<UserModel?> getUserStream(String uid) {
+    return _firestore.collection(AppConstants.usersCollection).doc(uid).snapshots().map((doc) {
+      if (!doc.exists || doc.data() == null) return null;
+      return UserModel.fromMap(doc.data()!, doc.id);
+    });
+  }
+
   Future<void> addPoints(String uid, int points) async {
     await _firestore.collection(AppConstants.usersCollection).doc(uid).update({
       'lustScore': FieldValue.increment(points),

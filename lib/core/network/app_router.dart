@@ -16,6 +16,11 @@ import '../../features/games/screens/spin_wheel_screen.dart';
 import '../../features/games/screens/truth_or_dare_screen.dart';
 import '../../features/consultation/screens/consultation_screen.dart';
 import '../../features/partner/screens/chat_screen.dart';
+import '../../features/profile/screens/edit_profile_screen.dart';
+import '../../features/profile/screens/notifications_screen.dart';
+import '../../features/profile/screens/privacy_policy_screen.dart';
+import '../../features/profile/screens/help_faq_screen.dart';
+import '../../features/profile/screens/about_screen.dart';
 import '../widgets/app_shell.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -67,6 +72,26 @@ final GoRouter appRouter = GoRouter(
         final connectionId = state.pathParameters['connectionId']!;
         return ChatScreen(connectionId: connectionId);
       },
+    ),
+    GoRoute(
+      path: AppRoutes.editProfile,
+      builder: (ctx, state) => const EditProfileScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.notifications,
+      builder: (ctx, state) => const NotificationsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.privacyPolicy,
+      builder: (ctx, state) => const PrivacyPolicyScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.helpFaq,
+      builder: (ctx, state) => const HelpFaqScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.about,
+      builder: (ctx, state) => const AboutScreen(),
     ),
     ShellRoute(
       navigatorKey: _shellNavigatorKey,

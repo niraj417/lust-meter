@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -68,11 +69,16 @@ class AuthService {
 
   /// Create Firestore user document on first sign-up
   Future<void> _createUserDocument(User user, String name) async {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final r = Random.secure();
+    final inviteCode = List.generate(6, (_) => chars[r.nextInt(chars.length)]).join();
+
     await _firestore.collection('users').doc(user.uid).set({
       'uid': user.uid,
       'name': name,
       'email': user.email,
       'photoUrl': user.photoURL,
+      'inviteCode': inviteCode,
       'partnerId': null,
       'lustScore': 50,
       'emotionalScore': 50,

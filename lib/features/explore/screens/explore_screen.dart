@@ -257,7 +257,6 @@ class _ChallengesTabState extends State<_ChallengesTab> {
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final emojiCtrl = TextEditingController(text: '🔥');
-    final durationCtrl = TextEditingController(text: '1 Day');
     
     // Pick a random preset color
     final colors = ['E63950', '9B30FF', 'FF8C42', '30B0FF', '4DFF88'];
@@ -329,18 +328,6 @@ class _ChallengesTabState extends State<_ChallengesTab> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: durationCtrl,
-                  style: const TextStyle(color: Colors.white, fontFamily: 'Inter'),
-                  decoration: InputDecoration(
-                    hintText: 'Duration (e.g. 1 Day, 1 Week)',
-                    hintStyle: const TextStyle(color: AppColors.textHint),
-                    filled: true,
-                    fillColor: const Color(0xFF161224),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  ),
-                ),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () async {
@@ -355,7 +342,7 @@ class _ChallengesTabState extends State<_ChallengesTab> {
                       title: titleCtrl.text.trim(),
                       description: descCtrl.text.trim(),
                       emoji: emojiCtrl.text.trim().isEmpty ? '🔥' : emojiCtrl.text.trim(),
-                      duration: durationCtrl.text.trim(),
+                      duration: '',
                       colorHex: defaultColor,
                       likes: 0,
                       authorId: user.uid,

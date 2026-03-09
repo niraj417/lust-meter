@@ -132,14 +132,14 @@ class ProfileScreen extends StatelessWidget {
                 // Menu items
                 const _SectionLabel('Account'),
                 const SizedBox(height: 10),
-                _MenuItem(icon: Icons.edit_rounded, label: 'Edit Profile', onTap: () {}),
-                _MenuItem(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () {}),
-                _MenuItem(icon: Icons.lock_outline_rounded, label: 'Privacy & Security', onTap: () {}),
+                _MenuItem(icon: Icons.edit_rounded, label: 'Edit Profile', onTap: () => context.push(AppRoutes.editProfile)),
+                _MenuItem(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () => context.push(AppRoutes.notifications)),
+                _MenuItem(icon: Icons.lock_outline_rounded, label: 'Privacy & Security', onTap: () => context.push(AppRoutes.privacyPolicy)),
                 const SizedBox(height: 20),
                 const _SectionLabel('Support'),
                 const SizedBox(height: 10),
-                _MenuItem(icon: Icons.help_outline_rounded, label: 'Help & FAQ', onTap: () {}),
-                _MenuItem(icon: Icons.info_outline_rounded, label: 'About Lust Meter', onTap: () {}),
+                _MenuItem(icon: Icons.help_outline_rounded, label: 'Help & FAQ', onTap: () => context.push(AppRoutes.helpFaq)),
+                _MenuItem(icon: Icons.info_outline_rounded, label: 'About Lust Meter', onTap: () => context.push(AppRoutes.about)),
                 const SizedBox(height: 24),
 
                 // Sign out
