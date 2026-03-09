@@ -8,6 +8,7 @@ import '../../features/auth/screens/signup_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/games/screens/games_screen.dart';
 import '../../features/explore/screens/explore_screen.dart';
+import '../../features/explore/screens/kink_partners_screen.dart';
 import '../../features/partner/screens/partner_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/games/screens/compatibility_quiz_screen.dart';
@@ -16,6 +17,7 @@ import '../../features/games/screens/spin_wheel_screen.dart';
 import '../../features/games/screens/truth_or_dare_screen.dart';
 import '../../features/consultation/screens/consultation_screen.dart';
 import '../../features/partner/screens/chat_screen.dart';
+import '../../features/partner/screens/chat_list_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/profile/screens/notifications_screen.dart';
 import '../../features/profile/screens/privacy_policy_screen.dart';
@@ -67,6 +69,10 @@ final GoRouter appRouter = GoRouter(
       builder: (ctx, state) => const ConsultationScreen(),
     ),
     GoRoute(
+      path: AppRoutes.chatList,
+      builder: (ctx, state) => const ChatListScreen(),
+    ),
+    GoRoute(
       path: AppRoutes.chat,
       builder: (ctx, state) {
         final connectionId = state.pathParameters['connectionId']!;
@@ -87,11 +93,18 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.helpFaq,
-      builder: (ctx, state) => const HelpFaqScreen(),
+      builder: (ctx, state) => const HelpFAQScreen(),
     ),
     GoRoute(
       path: AppRoutes.about,
       builder: (ctx, state) => const AboutScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.kinkPartners,
+      builder: (ctx, state) {
+        final kinkId = state.pathParameters['id']!;
+        return KinkPartnersScreen(kinkId: kinkId);
+      },
     ),
     ShellRoute(
       navigatorKey: _shellNavigatorKey,

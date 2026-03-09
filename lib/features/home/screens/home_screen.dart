@@ -1,7 +1,10 @@
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/models/partner_connection_model.dart';
 import '../../../services/gemini_service.dart';
 import '../../../services/database_service.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -17,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _aiTip = 'Loading your daily intimacy tip...';
   bool _isLoadingTip = true;
+  final DatabaseService _db = DatabaseService();
 
   @override
   void initState() {
@@ -46,8 +50,9 @@ class _HomeScreenState extends State<HomeScreen> {
           physicalScore: 0,
         );
       } else {
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
         tip = await GeminiService.generateText(
-          'Generate a short, romantic, and actionable intimacy tip for a couple in a long-term relationship. Max 2 sentences.',
+          'Generate a short, romantic, and actionable intimacy tip for a couple in a long-term relationship. Max 2 sentences. Make it completely unique and different from previous tips. (Seed: $timestamp)',
         );
       }
       
@@ -83,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 
                 return CustomScrollView(
                   slivers: [
-                    _buildAppBar(context),
+                    _buildAppBar(context, user),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       sliver: SliverList(
@@ -107,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  SliverAppBar _buildAppBar(BuildContext context) {
+  SliverAppBar _buildAppBar(BuildContext context, firebase_auth.User? user) {
     return SliverAppBar(
       backgroundColor: AppColors.background,
       floating: true,
@@ -115,23 +120,40 @@ class _HomeScreenState extends State<HomeScreen> {
       elevation: 0,
       title: Row(
         children: [
-          ShaderMask(
-            shaderCallback: (b) => AppColors.fireGradient.createShader(b),
-            child: const Text('Lust Meter', style: TextStyle(
-              fontSize: 22, fontWeight: FontWeight.w800,
-              color: Colors.white, fontFamily: 'Inter',
-            )),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Welcome back, ${user!.displayName!.split(' ').first} \u{1F44B}',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.textPrimary),
+                ),
+                Text(
+                  'Ready to turn up the heat?',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(width: 6),
-          const Text('🔥', style: TextStyle(fontSize: 18)),
+          StreamBuilder<List<PartnerConnectionModel>>(
+            stream: _db.getUserConnectionsStream(user.uid),
+            builder: (ctx, snap) {
+              final connections = snap.data ?? [];
+              if (connections.isNotEmpty) {
+                return IconButton(
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.textSecondary),
+                  onPressed: () => context.push(AppRoutes.chatList),
+                );
+              }
+              return const SizedBox();
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
+            onPressed: () => context.push(AppRoutes.notifications),
+          ),
         ],
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: AppColors.textPrimary),
-          onPressed: () {},
-        ),
-      ],
     );
   }
 }

@@ -128,7 +128,7 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
               const Text('Spicy 🔥', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
               Switch(
                 value: _isSpicyMode,
-                activeColor: AppColors.primary,
+                        activeThumbColor: AppColors.primary,
                 onChanged: _isSpinning
                     ? null
                     : (val) {

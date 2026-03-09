@@ -12,10 +12,30 @@ class ExploreService {
     return snapshot.docs.map((doc) => KinkModel.fromMap(doc.data(), doc.id)).toList();
   }
 
+  Stream<List<KinkModel>> getKinksStream() {
+    _seedMockDataIfEmpty();
+    return _firestore
+        .collection(AppConstants.kinksCollection)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => KinkModel.fromMap(doc.data(), doc.id))
+            .toList());
+  }
+
   Future<List<PositionModel>> getPositions() async {
     await _seedMockDataIfEmpty();
     final snapshot = await _firestore.collection(AppConstants.positionsCollection).get();
     return snapshot.docs.map((doc) => PositionModel.fromMap(doc.data(), doc.id)).toList();
+  }
+
+  Stream<List<PositionModel>> getPositionsStream() {
+    _seedMockDataIfEmpty();
+    return _firestore
+        .collection(AppConstants.positionsCollection)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => PositionModel.fromMap(doc.data(), doc.id))
+            .toList());
   }
 
   Future<void> _seedMockDataIfEmpty() async {

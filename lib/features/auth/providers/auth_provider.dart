@@ -79,6 +79,11 @@ class AuthProvider extends ChangeNotifier {
     await _authService.signOut();
   }
 
+  Future<void> refreshUser() async {
+    _user = FirebaseAuth.instance.currentUser;
+    notifyListeners();
+  }
+
   Future<void> sendPasswordReset(String email) async {
     await _authService.sendPasswordReset(email);
   }

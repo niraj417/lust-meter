@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../services/database_service.dart';
+import '../../../core/models/user_model.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -12,166 +14,178 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final user = auth.user;
-    final name = user?.displayName ?? 'Mystery Lover';
-    final email = user?.email ?? '';
-    final photo = user?.photoURL;
-
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          // App bar with profile header
-          SliverAppBar(
-            expandedHeight: 240,
-            floating: false,
-            pinned: true,
-            backgroundColor: AppColors.background,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF1A0A14), AppColors.background],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 48),
-                    // Avatar
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: AppColors.primaryGradient,
-                        boxShadow: [
-                          BoxShadow(
-                              color: AppColors.primary.withAlpha(80),
-                              blurRadius: 20,
-                              spreadRadius: 3)
-                        ],
-                      ),
-                      child: photo != null
-                          ? ClipOval(child: Image.network(photo, fit: BoxFit.cover))
-                          : Center(
-                              child: Text(
-                                name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w800,
-                                  fontFamily: 'Inter',
+      body: user == null
+          ? const Center(child: CircularProgressIndicator())
+          : StreamBuilder<UserModel?>(
+              stream: DatabaseService().getUserStream(user.uid),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                }
+
+                final userData = snapshot.data;
+                final name = userData?.displayName ?? user.displayName ?? 'Mystery Lover';
+                final email = userData?.email ?? user.email ?? '';
+                final photo = user.photoURL;
+
+                return CustomScrollView(
+                  slivers: [
+                    // App bar with profile header
+                    SliverAppBar(
+                      expandedHeight: 240,
+                      floating: false,
+                      pinned: true,
+                      backgroundColor: AppColors.background,
+                      flexibleSpace: FlexibleSpaceBar(
+                        background: Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Color(0xFF1A0A14), AppColors.background],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(height: 48),
+                              // Avatar
+                              Container(
+                                width: 90,
+                                height: 90,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: AppColors.primaryGradient,
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: AppColors.primary.withAlpha(80),
+                                        blurRadius: 20,
+                                        spreadRadius: 3)
+                                  ],
                                 ),
+                                child: photo != null
+                                    ? ClipOval(child: Image.network(photo, fit: BoxFit.cover))
+                                    : Center(
+                                        child: Text(
+                                          name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 36,
+                                            fontWeight: FontWeight.w800,
+                                            fontFamily: 'Inter',
+                                          ),
+                                        ),
+                                      ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(name,
+                                  style: const TextStyle(
+                                      color: AppColors.textPrimary,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                      fontFamily: 'Inter')),
+                              const SizedBox(height: 4),
+                              Text(email,
+                                  style: const TextStyle(
+                                      color: AppColors.textHint,
+                                      fontSize: 13,
+                                      fontFamily: 'Inter')),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(children: [
+                          // Stats row
+                          Row(children: [
+                            _StatBox(label: 'Lust Score', value: '${userData?.lustScore ?? 0}', icon: '🔥'),
+                            const SizedBox(width: 10),
+                            _StatBox(label: 'Streak', value: '${userData?.streak ?? 0}d', icon: '⚡'),
+                            const SizedBox(width: 10),
+                            _StatBox(label: 'Points', value: '${userData?.points ?? 0}', icon: '⭐'),
+                          ]),
+                          const SizedBox(height: 28),
+
+                          // Rewards
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              gradient: AppColors.fireGradient,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: AppColors.primary.withAlpha(60),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 6))
+                              ],
+                            ),
+                            child: Row(children: [
+                              const Text('🏆', style: TextStyle(fontSize: 32)),
+                              const SizedBox(width: 14),
+                              const Expanded(
+                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  Text('Reward Store',
+                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontFamily: 'Inter', fontSize: 16)),
+                                  Text('Redeem your points for couple treats',
+                                      style: TextStyle(color: Colors.white70, fontFamily: 'Inter', fontSize: 12)),
+                                ]),
+                              ),
+                              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 16),
+                            ]),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Menu items
+                          const _SectionLabel('Account'),
+                          const SizedBox(height: 10),
+                          _MenuItem(icon: Icons.edit_rounded, label: 'Edit Profile', onTap: () => context.push(AppRoutes.editProfile)),
+                          _MenuItem(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () => context.push(AppRoutes.notifications)),
+                          _MenuItem(icon: Icons.lock_outline_rounded, label: 'Privacy & Security', onTap: () => context.push(AppRoutes.privacyPolicy)),
+                          const SizedBox(height: 20),
+                          const _SectionLabel('Support'),
+                          const SizedBox(height: 10),
+                          _MenuItem(icon: Icons.help_outline_rounded, label: 'Help & FAQ', onTap: () => context.push(AppRoutes.helpFaq)),
+                          _MenuItem(icon: Icons.info_outline_rounded, label: 'About Lust Meter', onTap: () => context.push(AppRoutes.about)),
+                          const SizedBox(height: 24),
+
+                          // Sign out
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                await context.read<AuthProvider>().signOut();
+                                if (context.mounted) context.go(AppRoutes.login);
+                              },
+                              icon: const Icon(Icons.logout_rounded,
+                                  color: AppColors.error),
+                              label: const Text('Sign Out',
+                                  style: TextStyle(
+                                      color: AppColors.error,
+                                      fontFamily: 'Inter',
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15)),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: AppColors.error),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14)),
                               ),
                             ),
+                          ),
+                          const SizedBox(height: 40),
+                        ]),
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    Text(name,
-                        style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'Inter')),
-                    const SizedBox(height: 4),
-                    Text(email,
-                        style: const TextStyle(
-                            color: AppColors.textHint,
-                            fontSize: 13,
-                            fontFamily: 'Inter')),
                   ],
-                ),
-              ),
+                );
+              },
             ),
-          ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(children: [
-                // Stats row
-                Row(children: [
-                  _StatBox(label: 'Lust Score', value: '72', icon: '🔥'),
-                  const SizedBox(width: 10),
-                  _StatBox(label: 'Streak', value: '5d', icon: '⚡'),
-                  const SizedBox(width: 10),
-                  _StatBox(label: 'Points', value: '320', icon: '⭐'),
-                ]),
-                const SizedBox(height: 28),
-
-                // Rewards
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: AppColors.fireGradient,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                          color: AppColors.primary.withAlpha(60),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6))
-                    ],
-                  ),
-                  child: Row(children: [
-                    const Text('🏆', style: TextStyle(fontSize: 32)),
-                    const SizedBox(width: 14),
-                    const Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('Reward Store',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontFamily: 'Inter', fontSize: 16)),
-                        Text('Redeem your points for couple treats',
-                            style: TextStyle(color: Colors.white70, fontFamily: 'Inter', fontSize: 12)),
-                      ]),
-                    ),
-                    const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 16),
-                  ]),
-                ),
-                const SizedBox(height: 24),
-
-                // Menu items
-                const _SectionLabel('Account'),
-                const SizedBox(height: 10),
-                _MenuItem(icon: Icons.edit_rounded, label: 'Edit Profile', onTap: () => context.push(AppRoutes.editProfile)),
-                _MenuItem(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () => context.push(AppRoutes.notifications)),
-                _MenuItem(icon: Icons.lock_outline_rounded, label: 'Privacy & Security', onTap: () => context.push(AppRoutes.privacyPolicy)),
-                const SizedBox(height: 20),
-                const _SectionLabel('Support'),
-                const SizedBox(height: 10),
-                _MenuItem(icon: Icons.help_outline_rounded, label: 'Help & FAQ', onTap: () => context.push(AppRoutes.helpFaq)),
-                _MenuItem(icon: Icons.info_outline_rounded, label: 'About Lust Meter', onTap: () => context.push(AppRoutes.about)),
-                const SizedBox(height: 24),
-
-                // Sign out
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      await context.read<AuthProvider>().signOut();
-                      if (context.mounted) context.go(AppRoutes.login);
-                    },
-                    icon: const Icon(Icons.logout_rounded,
-                        color: AppColors.error),
-                    label: const Text('Sign Out',
-                        style: TextStyle(
-                            color: AppColors.error,
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15)),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.error),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 40),
-              ]),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

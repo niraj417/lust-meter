@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../services/database_service.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../models/kink_model.dart';
+import '../../../core/widgets/comments_bottom_sheet.dart';
 
 class KinkDetailScreen extends StatefulWidget {
   final KinkModel kink;
@@ -15,8 +17,6 @@ class KinkDetailScreen extends StatefulWidget {
 }
 
 class _KinkDetailScreenState extends State<KinkDetailScreen> {
-  bool _isLiked = false;
-  bool _isTried = false;
 
   @override
   void initState() {
@@ -137,82 +137,146 @@ class _KinkDetailScreenState extends State<KinkDetailScreen> {
                 ],
               ),
             ),
-            
-            const SizedBox(height: 32),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      setState(() => _isLiked = !_isLiked);
-                      final uid = context.read<AuthProvider>().user?.uid;
-                      if (uid != null) {
-                        try {
-                          await DatabaseService().recordKinkInteraction(uid, widget.kink.id ?? widget.kink.title, _isLiked ? 'liked' : 'none');
-                        } catch (_) {}
-                      }
-                    },
-                    icon: Icon(
-                      _isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                      color: _isLiked ? AppColors.primary : Colors.white,
-                    ),
-                    label: Text(
-                      'Like',
-                      style: TextStyle(
-                        color: _isLiked ? AppColors.primary : Colors.white,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: BorderSide(
-                        color: _isLiked ? AppColors.primary : Colors.white24,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+                        const SizedBox(height: 32),
+              
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    context.push(AppRoutes.kinkPartners.replaceFirst(':id', widget.kink.id));
+                  },
+                  icon: const Icon(Icons.group_add_rounded),
+                  label: const Text('Find Partners'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.secondary.withOpacity(0.2),
+                    foregroundColor: AppColors.secondary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      setState(() => _isTried = !_isTried);
-                      final uid = context.read<AuthProvider>().user?.uid;
-                      if (uid != null) {
-                        try {
-                          await DatabaseService().recordKinkInteraction(uid, widget.kink.id ?? widget.kink.title, _isTried ? 'tried' : 'none');
-                        } catch (_) {}
-                      }
+              ),
+              const SizedBox(height: 16),
+
+              Builder(
+                builder: (context) {
+                  final uid = context.read<AuthProvider>().user?.uid;
+                  if (uid == null) return const SizedBox.shrink();
+
+                  return StreamBuilder<Map<String, bool>>(
+                    stream: DatabaseService().getKinkInteractionStream(uid, widget.kink.id),
+                    builder: (context, snapshot) {
+                      final data = snapshot.data ?? {'isLiked': false, 'isTried': false};
+                      final isLiked = data['isLiked'] ?? false;
+                      final isTried = data['isTried'] ?? false;
+
+                      return Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    try {
+                                      await DatabaseService().recordKinkInteraction(uid, widget.kink.id, isLiked: !isLiked);
+                                    } catch (_) {}
+                                  },
+                                  icon: Icon(
+                                    isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                    color: isLiked ? AppColors.primary : Colors.white,
+                                  ),
+                                  label: Text(
+                                    'Like',
+                                    style: TextStyle(
+                                      color: isLiked ? AppColors.primary : Colors.white,
+                                      fontFamily: 'Inter',
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    side: BorderSide(
+                                      color: isLiked ? AppColors.primary : Colors.white24,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                flex: 2,
+                                child: ElevatedButton.icon(
+                                  onPressed: () async {
+                                    try {
+                                      await DatabaseService().recordKinkInteraction(uid, widget.kink.id, isTried: !isTried);
+                                    } catch (_) {}
+                                  },
+                                  icon: Icon(
+                                    Icons.check_rounded,
+                                    color: isTried ? Colors.white : Colors.white70,
+                                  ),
+                                  label: Text(
+                                    isTried ? 'Tried It!' : 'Mark as Tried',
+                                    style: TextStyle(
+                                      color: isTried ? Colors.white : Colors.white70,
+                                      fontFamily: 'Inter',
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isTried ? AppColors.primary : const Color(0xFF2A2438),
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (context) => CommentsBottomSheet(
+                                    collection: AppConstants.kinksCollection,
+                                    documentId: widget.kink.id,
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white70),
+                              label: const Text(
+                                'Comments',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF2A2438),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
                     },
-                    icon: Icon(
-                      Icons.check_rounded,
-                      color: _isTried ? Colors.white : Colors.white70,
-                    ),
-                    label: Text(
-                      _isTried ? 'Tried It!' : 'Mark as Tried',
-                      style: TextStyle(
-                        color: _isTried ? Colors.white : Colors.white70,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _isTried ? AppColors.primary : const Color(0xFF2A2438),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 40),
+                  );
+                },
+              ),
+              const SizedBox(height: 40),
           ],
         ),
       ),

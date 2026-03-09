@@ -61,7 +61,8 @@ You are a warm, supportive relationship coach. Generate ONE concise, positive re
 - Emotional Score: $emotionalScore/100
 - Physical Score: $physicalScore/100
 
-Focus on the lowest score area. Be encouraging and specific. No emojis in the tip itself.
+Focus on the lowest score area. Be encouraging and specific. No emojis in the tip itself. 
+Ensure this tip is completely unique and different from previous ones. (Context Seed: \${DateTime.now().millisecondsSinceEpoch})
 ''';
     return _generate(prompt);
   }
@@ -89,9 +90,10 @@ Make them playful and relationship-building.
 
   /// Generate compatibility quiz questions
   Future<List<Map<String, dynamic>>> generateQuizQuestions(
-      {required int count}) async {
+      {required int count, bool spicy = false}) async {
+    final intensity = spicy ? 'spicy and intimately revealing' : 'relationship-building';
     final prompt = '''
-Create $count multiple-choice quiz questions a couple can answer about each other.
+Create $count $intensity multiple-choice quiz questions a couple can answer about each other.
 Format each as JSON: {"question": "...", "options": ["A", "B", "C", "D"]}
 Return a JSON array only, no markdown or commentary.
 ''';
@@ -106,9 +108,10 @@ Return a JSON array only, no markdown or commentary.
   }
 
   /// Generate fantasy card prompts
-  Future<List<String>> generateFantasyCards({required int count}) async {
+  Future<List<String>> generateFantasyCards({required int count, bool spicy = false}) async {
+    final intensity = spicy ? 'intensely sensual and spicy' : 'romantic and sensual';
     final prompt = '''
-Generate $count romantic and sensual "Fantasy Card" scenarios for an adult couple.
+Generate $count $intensity "Fantasy Card" scenarios for an adult couple.
 Keep them tasteful but exciting. Return ONLY a numbered list, one per line.
 ''';
     final raw = await _generate(prompt);

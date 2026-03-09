@@ -75,7 +75,7 @@ class AuthService {
 
     await _firestore.collection('users').doc(user.uid).set({
       'uid': user.uid,
-      'name': name,
+      'displayName': name,
       'email': user.email,
       'photoUrl': user.photoURL,
       'inviteCode': inviteCode,
@@ -84,8 +84,8 @@ class AuthService {
       'emotionalScore': 50,
       'physicalScore': 50,
       'bondScore': 50,
-      'dailyStreak': 0,
-      'totalPoints': 0,
+      'streak': 0,
+      'points': 0,
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }

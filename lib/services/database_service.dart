@@ -1,17 +1,22 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:math';
 import '../core/constants/app_constants.dart';
 import '../core/models/doctor_model.dart';
 import '../core/models/game_session_model.dart';
 import '../core/models/kink_interaction_model.dart';
+import '../core/models/kink_request_model.dart';
 import '../core/models/message_model.dart';
 import '../core/models/partner_connection_model.dart';
 import '../core/models/user_model.dart';
 import '../../features/explore/models/challenge_model.dart';
 import '../../features/explore/models/challenge_interaction_model.dart';
+import '../../core/models/comment_model.dart';
 
 class DatabaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   // --- Users ---
   Future<UserModel?> getUser(String uid) async {
@@ -34,6 +39,10 @@ class DatabaseService {
       'lustScore': FieldValue.increment(points),
       'points': FieldValue.increment(points),
     });
+  }
+
+  Future<void> updateUserProfile(String uid, Map<String, dynamic> data) async {
+    await _firestore.collection(AppConstants.usersCollection).doc(uid).update(data);
   }
 
   // --- Partner Connections & Invites ---
@@ -69,37 +78,23 @@ class DatabaseService {
     await _firestore.collection(AppConstants.usersCollection).doc(partnerDoc.id).set({'partnerId': uid}, SetOptions(merge: true));
   }
 
-  Stream<String?> getPartnerIdStream(String uid) {
-    return _firestore.collection(AppConstants.usersCollection).doc(uid).snapshots().map((doc) {
-      if (!doc.exists) return null;
-      return doc.data()?['partnerId'] as String?;
-    });
-  }
-
-  Stream<PartnerConnectionModel?> getPartnerConnectionStream(String uid) {
+  Stream<List<PartnerConnectionModel>> getUserConnectionsStream(String uid) {
     return _firestore
         .collection(AppConstants.partnersCollection)
         .where('users', arrayContains: uid)
-        .limit(1)
         .snapshots()
         .map((snapshot) {
-      if (snapshot.docs.isEmpty) return null;
-      return PartnerConnectionModel.fromMap(
-          snapshot.docs.first.data(), snapshot.docs.first.id);
+      return snapshot.docs
+          .map((doc) => PartnerConnectionModel.fromMap(doc.data(), doc.id))
+          .toList();
     });
   }
 
-  // --- Kink Interactions ---
-  Future<void> recordKinkInteraction(String userId, String kinkId, String status) async {
-    final docId = '${userId}_$kinkId';
-    await _firestore.collection(AppConstants.kinkInteractionsCollection).doc(docId).set({
-      'userId': userId,
-      'kinkId': kinkId,
-      'status': status,
-      'partnerMatch': false, // Would require checking partner's interaction separately
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+  Future<void> deletePartnerConnection(String connectionId) async {
+    await _firestore.collection(AppConstants.partnersCollection).doc(connectionId).delete();
   }
+
+  // --- Kink Interactions ---
 
   Future<List<KinkInteractionModel>> getUserKinkInteractions(String userId) async {
     final snapshot = await _firestore
@@ -107,6 +102,117 @@ class DatabaseService {
         .where('userId', isEqualTo: userId)
         .get();
     return snapshot.docs.map((doc) => KinkInteractionModel.fromMap(doc.data(), doc.id)).toList();
+  }
+
+  // Find all users interested in a specific kink
+  Future<List<UserModel>> getUsersInterestedInKink(String kinkId, String currentUserId) async {
+    final interactionSnapshot = await _firestore
+        .collection(AppConstants.kinkInteractionsCollection)
+        .where('kinkId', isEqualTo: kinkId)
+        .where('status', isEqualTo: 'tried') // assuming 'tried' or 'liked' means interested
+        .get();
+
+    List<UserModel> users = [];
+    for (var doc in interactionSnapshot.docs) {
+      final interaction = KinkInteractionModel.fromMap(doc.data(), doc.id);
+      if (interaction.userId != currentUserId) {
+        final user = await getUser(interaction.userId);
+        if (user != null) {
+          users.add(user);
+        }
+      }
+    }
+    
+    // Also include 'liked' if they haven't tried but want to
+    final likedSnapshot = await _firestore
+        .collection(AppConstants.kinkInteractionsCollection)
+        .where('kinkId', isEqualTo: kinkId)
+        .where('status', isEqualTo: 'liked')
+        .get();
+        
+    for (var doc in likedSnapshot.docs) {
+      final interaction = KinkInteractionModel.fromMap(doc.data(), doc.id);
+      if (interaction.userId != currentUserId && !users.any((u) => u.uid == interaction.userId)) {
+        final user = await getUser(interaction.userId);
+        if (user != null) {
+          users.add(user);
+        }
+      }
+    }
+
+    return users;
+  }
+
+  // Send a kink request
+  Future<void> sendKinkRequest(String fromUser, String toUser, String kinkId) async {
+    // Check if request already exists
+    final existingParams = await _firestore.collection(AppConstants.kinkRequestsCollection)
+        .where('fromUserId', isEqualTo: fromUser)
+        .where('toUserId', isEqualTo: toUser)
+        .where('kinkId', isEqualTo: kinkId)
+        .get();
+
+    if (existingParams.docs.isNotEmpty) return;
+
+    await _firestore.collection(AppConstants.kinkRequestsCollection).add({
+      'fromUserId': fromUser,
+      'toUserId': toUser,
+      'kinkId': kinkId,
+      'status': 'pending',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Get stream of received kink requests
+  Stream<List<KinkRequestModel>> getReceivedKinkRequestsStream(String userId) {
+    return _firestore
+        .collection(AppConstants.kinkRequestsCollection)
+        .where('toUserId', isEqualTo: userId)
+        .where('status', isEqualTo: 'pending')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => KinkRequestModel.fromMap(doc.data(), doc.id)).toList());
+  }
+
+  // Accept/reject kink request
+  Future<void> updateKinkRequestStatus(String requestId, String status) async {
+    await _firestore.collection(AppConstants.kinkRequestsCollection).doc(requestId).update({
+      'status': status,
+    });
+  }
+
+  Future<void> acceptKinkRequest(KinkRequestModel request) async {
+    // 1. update status
+    await updateKinkRequestStatus(request.id, 'accepted');
+    
+    // 2. check if connection already exists
+    final existing = await _firestore.collection(AppConstants.partnersCollection)
+      .where('users', arrayContains: request.fromUserId)
+      .get();
+      
+    bool alreadyConnected = false;
+    for (var doc in existing.docs) {
+      final users = List<String>.from(doc.data()['users'] ?? []);
+      if (users.contains(request.toUserId)) {
+        alreadyConnected = true;
+        break;
+      }
+    }
+
+    // 3. create partner connection string for chat if not already connected
+    if (!alreadyConnected) {
+      await _firestore.collection(AppConstants.partnersCollection).add({
+        'users': [request.fromUserId, request.toUserId],
+        'status': 'connected',
+        'type': 'kink',
+        'kinkId': request.kinkId,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+
+  Future<void> rejectKinkRequest(String requestId) async {
+    await updateKinkRequestStatus(requestId, 'rejected');
   }
 
   // --- Challenges ---
@@ -157,6 +263,78 @@ class DatabaseService {
       return ChallengeInteractionModel.fromMap(doc.data()!, doc.id);
     });
   }
+
+  // --- Kinks Interactions ---
+  Future<void> recordKinkInteraction(String userId, String kinkId, {bool? isLiked, bool? isTried}) async {
+    final docId = '${userId}_$kinkId';
+    final docRef = _firestore.collection(AppConstants.kinkInteractionsCollection).doc(docId);
+    
+    final updateData = <String, dynamic>{
+      'userId': userId,
+      'kinkId': kinkId,
+      'partnerMatch': false,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    if (isLiked != null) {
+      updateData['status'] = isLiked ? 'liked' : 'none';
+      // Increment or decrement likes on the kink document
+      await _firestore.collection(AppConstants.kinksCollection).doc(kinkId).update({
+        'likes': FieldValue.increment(isLiked ? 1 : -1)
+      });
+    }
+
+    if (isTried != null) {
+      updateData['isTried'] = isTried;
+    }
+
+    await docRef.set(updateData, SetOptions(merge: true));
+  }
+
+  Stream<Map<String, bool>> getKinkInteractionStream(String userId, String kinkId) {
+    final docId = '${userId}_$kinkId';
+    return _firestore
+        .collection(AppConstants.kinkInteractionsCollection)
+        .doc(docId)
+        .snapshots()
+        .map((doc) {
+      if (!doc.exists) return {'isLiked': false, 'isTried': false};
+      final data = doc.data()!;
+      return {
+        'isLiked': data['status'] == 'liked',
+        'isTried': data['isTried'] == true,
+      };
+    });
+  }
+
+  // --- Generic Comments ---
+  Stream<List<CommentModel>> getCommentsStream(String collection, String docId) {
+    return _firestore
+        .collection(collection)
+        .doc(docId)
+        .collection('comments')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => CommentModel.fromMap(doc.data(), doc.id)).toList());
+  }
+
+  Future<void> addComment(String collection, String docId, CommentModel comment) async {
+    await _firestore.collection(collection).doc(docId).collection('comments').add(comment.toMap());
+  }
+
+  Future<void> toggleCommentLike(String collection, String parentDocId, String commentId, String userId, bool isLiked) async {
+    final commentRef = _firestore.collection(collection).doc(parentDocId).collection('comments').doc(commentId);
+    if (isLiked) {
+      await commentRef.update({
+        'likedBy': FieldValue.arrayUnion([userId])
+      });
+    } else {
+      await commentRef.update({
+        'likedBy': FieldValue.arrayRemove([userId])
+      });
+    }
+  }
+
 
   // --- Game Sessions ---
   Future<void> recordGameSession(GameSessionModel session) async {
@@ -212,5 +390,12 @@ class DatabaseService {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => MessageModel.fromMap(doc.data(), doc.id)).toList());
+  }
+
+  Future<String> uploadChatImage(String connectionId, File file) async {
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final ref = _storage.ref().child(AppConstants.chatImagesStorage).child(connectionId).child(fileName);
+    final uploadTask = await ref.putFile(file);
+    return await uploadTask.ref.getDownloadURL();
   }
 }

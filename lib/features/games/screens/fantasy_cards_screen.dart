@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../services/gemini_service.dart';
 
 class FantasyCardsScreen extends StatefulWidget {
   const FantasyCardsScreen({super.key});
@@ -108,12 +109,46 @@ class _FantasyCardsScreenState extends State<FantasyCardsScreen> {
     ),
   ];
 
-  List<_FantasyCard> get _currentCards => _isSpicyMode ? _spicyCards : _normalCards;
+  late List<_FantasyCard> _dynamicNormalCards;
+  late List<_FantasyCard> _dynamicSpicyCards;
+  bool _isLoadingMore = false;
+
+  List<_FantasyCard> get _currentCards => _isSpicyMode ? _dynamicSpicyCards : _dynamicNormalCards;
 
   @override
   void initState() {
     super.initState();
+    _dynamicNormalCards = List.from(_normalCards)..shuffle();
+    _dynamicSpicyCards = List.from(_spicyCards)..shuffle();
     _controller = CardSwiperController();
+  }
+
+  Future<void> _fetchMoreCards() async {
+    if (_isLoadingMore) return;
+    _isLoadingMore = true;
+    try {
+      final isSpicy = _isSpicyMode;
+      final geminiService = GeminiService(apiKey: 'AIzaSyAZu2a2p5vLsMgB5cDjgWzSJTEAsLLoLCE');
+      final newPrompts = await geminiService.generateFantasyCards(count: 3, spicy: isSpicy);
+      final newCards = newPrompts.map((p) => _FantasyCard(
+        emoji: isSpicy ? '🔥' : '💖',
+        title: 'New Fantasy',
+        description: p,
+        color: isSpicy ? const Color(0xFFD50000) : const Color(0xFFE63950),
+      )).toList();
+      
+      if (mounted) {
+        setState(() {
+          if (isSpicy) {
+            _dynamicSpicyCards.addAll(newCards);
+          } else {
+            _dynamicNormalCards.addAll(newCards);
+          }
+        });
+      }
+    } catch (_) {} finally {
+      if (mounted) setState(() => _isLoadingMore = false);
+    }
   }
 
   @override
@@ -136,7 +171,7 @@ class _FantasyCardsScreenState extends State<FantasyCardsScreen> {
               const Text('Spicy 🔥', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
               Switch(
                 value: _isSpicyMode,
-                activeColor: AppColors.primary,
+                        activeThumbColor: AppColors.primary,
                 onChanged: (val) {
                   setState(() {
                     _isSpicyMode = val;
@@ -189,6 +224,9 @@ class _FantasyCardsScreenState extends State<FantasyCardsScreen> {
                     _passed++;
                   }
                 });
+                if (curr != null && curr >= _currentCards.length - 3) {
+                   _fetchMoreCards();
+                }
                 return true;
               },
               numberOfCardsDisplayed: 3,
@@ -196,7 +234,7 @@ class _FantasyCardsScreenState extends State<FantasyCardsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               cardBuilder: (ctx, idx, percentX, percentY) {
                 if (_currentCards.isEmpty) return const SizedBox();
-                final card = _currentCards[idx % _currentCards.length];
+                final card = idx < _currentCards.length ? _currentCards[idx] : _currentCards.last;
                 return _FantasyCardWidget(card: card);
               },
             ),

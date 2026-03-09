@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -29,7 +30,14 @@ class _SplashScreenState extends State<SplashScreen>
         .drive(Tween(begin: 0.0, end: 1.0));
     _controller.forward().then((_) {
       Future.delayed(const Duration(milliseconds: 800), () {
-        if (mounted) context.go(AppRoutes.ageGate);
+        if (mounted) {
+          final currentUser = FirebaseAuth.instance.currentUser;
+          if (currentUser != null) {
+            context.go(AppRoutes.home);
+          } else {
+            context.go(AppRoutes.ageGate);
+          }
+        }
       });
     });
   }

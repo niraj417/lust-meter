@@ -10,6 +10,8 @@ import 'package:provider/provider.dart';
 import '../../../services/database_service.dart';
 import '../models/challenge_model.dart';
 import '../models/challenge_interaction_model.dart';
+import '../../../core/constants/app_constants.dart';
+import '../../../core/widgets/comments_bottom_sheet.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -79,18 +81,18 @@ class _PositionsTab extends StatefulWidget {
 
 class _PositionsTabState extends State<_PositionsTab> {
   final ExploreService _service = ExploreService();
-  late Future<List<PositionModel>> _positionsFuture;
+  late Stream<List<PositionModel>> _positionsStream;
 
   @override
   void initState() {
     super.initState();
-    _positionsFuture = _service.getPositions();
+    _positionsStream = _service.getPositionsStream();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<PositionModel>>(
-      future: _positionsFuture,
+    return StreamBuilder<List<PositionModel>>(
+      stream: _positionsStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: AppColors.primary));
@@ -489,6 +491,32 @@ class _ChallengeCard extends StatelessWidget {
                           ],
                         ),
                       ),
+                      const SizedBox(width: 20),
+                      // Comments Button
+                      GestureDetector(
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => CommentsBottomSheet(
+                              collection: AppConstants.challengesCollection,
+                              documentId: challenge.id,
+                            ),
+                          );
+                        },
+                        child: Row(
+                          children: const [
+                            Icon(Icons.chat_bubble_outline_rounded, 
+                                 color: Colors.white54, size: 18),
+                            SizedBox(width: 4),
+                            Text('Comment', style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12, fontWeight: FontWeight.w500, fontFamily: 'Inter'
+                            )),
+                          ],
+                        ),
+                      ),
                     ],
                   );
                 },
@@ -511,7 +539,7 @@ class _KinksTab extends StatefulWidget {
 
 class _KinksTabState extends State<_KinksTab> {
   final ExploreService _service = ExploreService();
-  late Future<List<KinkModel>> _kinksFuture;
+  late Stream<List<KinkModel>> _kinksStream;
   final TextEditingController _searchController = TextEditingController();
   
   String _selectedCategory = 'All';
@@ -520,13 +548,13 @@ class _KinksTabState extends State<_KinksTab> {
   @override
   void initState() {
     super.initState();
-    _kinksFuture = _service.getKinks();
+    _kinksStream = _service.getKinksStream();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<KinkModel>>(
-      future: _kinksFuture,
+    return StreamBuilder<List<KinkModel>>(
+      stream: _kinksStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: AppColors.primary));

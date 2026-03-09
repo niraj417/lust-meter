@@ -12,9 +12,13 @@ class AppConstants {
   static const challengeInteractionsCollection = 'challenge_interactions';
   static const kinksCollection = 'kinks';
   static const kinkInteractionsCollection = 'kink_interactions';
+  static const kinkRequestsCollection = 'kink_requests';
   static const doctorsCollection = 'doctors';
   static const messagesCollection = 'messages'; // Subcollection
   static const gameSessionsCollection = 'game_sessions';
+  
+  // Storage Paths
+  static const chatImagesStorage = 'chat_images';
 
   // Firestore Fields
   static const fieldUid = 'uid';
@@ -51,10 +55,12 @@ class AppRoutes {
   static const rewards = '/profile/rewards';
   static const compatibilityQuiz = '/compatibility-quiz';
   static const consultation = '/consultation';
+  static const chatList = '/chat-list';
   static const chat = '/chat/:connectionId';
   static const editProfile = '/profile/edit';
   static const notifications = '/profile/notifications';
   static const privacyPolicy = '/profile/privacy-policy';
   static const helpFaq = '/profile/help-faq';
   static const about = '/profile/about';
+  static const kinkPartners = '/kink-partners/:id';
 }

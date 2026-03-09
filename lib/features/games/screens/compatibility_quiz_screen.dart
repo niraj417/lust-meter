@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/models/game_session_model.dart';
 import '../../../services/database_service.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../services/gemini_service.dart';
 
 class CompatibilityQuizScreen extends StatefulWidget {
   const CompatibilityQuizScreen({super.key});
@@ -68,7 +69,38 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
     },
   ];
 
-  List<Map<String, dynamic>> get _currentQuestions => _isSpicyMode ? _spicyQuestions : _normalQuestions;
+  bool _isFetchingQuestions = true;
+  List<Map<String, dynamic>> _dynamicQuestions = [];
+
+  List<Map<String, dynamic>> get _currentQuestions =>
+      _dynamicQuestions.isNotEmpty ? _dynamicQuestions : (_isSpicyMode ? _spicyQuestions : _normalQuestions);
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchQuestions();
+  }
+
+  Future<void> _fetchQuestions() async {
+    setState(() => _isFetchingQuestions = true);
+    try {
+      final geminiService = GeminiService(apiKey: 'AIzaSyAZu2a2p5vLsMgB5cDjgWzSJTEAsLLoLCE');
+      final fetched = await geminiService.generateQuizQuestions(count: 5, spicy: _isSpicyMode);
+      if (mounted) {
+        setState(() {
+          _dynamicQuestions = fetched.isNotEmpty ? fetched : (_isSpicyMode ? _spicyQuestions : _normalQuestions);
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _dynamicQuestions = _isSpicyMode ? _spicyQuestions : _normalQuestions;
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _isFetchingQuestions = false);
+    }
+  }
 
   void _nextPage() {
     if (_currentIndex < _currentQuestions.length - 1) {
@@ -135,16 +167,17 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
               const Text('Spicy 🔥', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
               Switch(
                 value: _isSpicyMode,
-                activeColor: AppColors.primary,
-                onChanged: _isLoading
+                        activeThumbColor: AppColors.primary,
+                onChanged: _isLoading || _isFetchingQuestions
                     ? null
                     : (val) {
                         setState(() {
                           _isSpicyMode = val;
                           _currentIndex = 0;
                           _answers.clear();
-                          _pageController.jumpToPage(0);
+                          // Don't jump page yet, fetch will rebuild
                         });
+                        _fetchQuestions();
                       },
               ),
             ],
@@ -164,7 +197,9 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
                 minHeight: 6,
               ),
               Expanded(
-                child: PageView.builder(
+                child: _isFetchingQuestions 
+                   ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                   : PageView.builder(
                   controller: _pageController,
                   physics: const NeverScrollableScrollPhysics(),
                   onPageChanged: (index) => setState(() => _currentIndex = index),

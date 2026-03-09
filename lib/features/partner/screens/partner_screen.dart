@@ -1,13 +1,9 @@
-import 'dart:math';
-import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/partner_connection_model.dart';
-import '../../../core/constants/app_constants.dart';
-import '../../../services/database_service.dart';
-import '../../auth/providers/auth_provider.dart';
+import '../../../core/models/user_model.dart';
 import '../../../services/database_service.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -95,24 +91,94 @@ class _PartnerScreenState extends State<PartnerScreen> {
       ),
       body: uid == null
           ? const Center(child: CircularProgressIndicator())
-          : StreamBuilder<String?>(
-              stream: DatabaseService().getPartnerIdStream(uid),
+          : StreamBuilder<List<PartnerConnectionModel>>(
+              stream: DatabaseService().getUserConnectionsStream(uid),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                final hasPartner = snapshot.data != null;
+                final connections = snapshot.data ?? [];
 
-                if (hasPartner) {
-                  return _Connected(uid: uid);
-                }
-
-                return _NotConnected(
-                  myCode: _myCode,
-                  codeCopied: _codeCopied,
-                  inviteCtrl: _inviteCtrl,
-                  onCopy: _copyCode,
-                  onSend: _sendInvite,
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Invite Code Section
+                      _NotConnected(
+                        myCode: _myCode,
+                        codeCopied: _codeCopied,
+                        inviteCtrl: _inviteCtrl,
+                        onCopy: _copyCode,
+                        onSend: _sendInvite,
+                      ),
+                      
+                      const SizedBox(height: 32),
+                      
+                      // Active Partners
+                      if (connections.isNotEmpty) ...[
+                        const Text(
+                          'Your Connections',
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            fontFamily: 'Inter',
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ...connections.map((conn) {
+                          final otherUserId = conn.users.firstWhere((id) => id != uid, orElse: () => '');
+                          return FutureBuilder<UserModel?>(
+                            future: DatabaseService().getUser(otherUserId),
+                            builder: (ctx, userSnap) {
+                              final partner = userSnap.data;
+                              final name = partner?.displayName ?? 'Unknown Partner';
+                              return Card(
+                                color: AppColors.surface,
+                                margin: const EdgeInsets.only(bottom: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.all(16),
+                                  leading: CircleAvatar(
+                                    backgroundColor: AppColors.primary.withOpacity(0.2),
+                                    child: const Icon(Icons.person, color: AppColors.primary),
+                                  ),
+                                  title: Text(name, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary) ?? const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+                                  subtitle: Text('Connected via ${conn.toMap()['type'] == 'kink' ? 'Kink' : 'Invite'}'),
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                                    onPressed: () async {
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (c) => AlertDialog(
+                                          title: const Text('Disconnect Partner?'),
+                                          content: const Text('Are you sure you want to remove this connection?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(c, false),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(c, true),
+                                              child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirm == true) {
+                                        await DatabaseService().deletePartnerConnection(conn.connectionId);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }),
+                      ],
+                    ],
+                  ),
                 );
               },
             ),
@@ -137,11 +203,9 @@ class _NotConnected extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
           const SizedBox(height: 24),
           // Hero illustration
           Container(
@@ -320,73 +384,10 @@ class _NotConnected extends StatelessWidget {
           _LockedTile(emoji: '📖', title: 'Shared Timeline', subtitle: 'Your relationship milestones'),
           _LockedTile(emoji: '🎯', title: 'Joint Challenges', subtitle: 'Complete couple challenges together'),
         ],
-      ),
-    );
+      );
   }
 }
 
-class _Connected extends StatelessWidget {
-  final String uid;
-  const _Connected({required this.uid});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<PartnerConnectionModel?>(
-      stream: DatabaseService().getPartnerConnectionStream(uid),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final connection = snapshot.data;
-        if (connection == null) {
-          return const Center(child: Text('Connecting...'));
-        }
-
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Icon(Icons.favorite, size: 80, color: AppColors.primary),
-              const SizedBox(height: 24),
-              const Text(
-                'Partner Connected! 🎉',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'You and your partner are now linked.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 48),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.chat_bubble_outline),
-                label: const Text('Open Couples Chat'),
-                onPressed: () {
-                  context.push(AppConstants.messagesCollection); // wait, should use AppRoutes.chat
-                  context.push('/chat/${connection.connectionId}');
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
 
 class _LockedTile extends StatelessWidget {
   final String emoji;

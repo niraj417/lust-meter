@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/models/game_session_model.dart';
 import '../../../services/database_service.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../services/gemini_service.dart';
 
 class TruthOrDareScreen extends StatefulWidget {
   const TruthOrDareScreen({super.key});
@@ -66,15 +67,37 @@ class _TruthOrDareScreenState extends State<TruthOrDareScreen>
     'Let me take off one item of your clothing with just my teeth.',
   ];
 
+  late Map<String, List<String>> _promptCache;
+
   @override
   void initState() {
     super.initState();
+    _promptCache = {
+      'normal_truth': List.from(_normalTruths)..shuffle(),
+      'normal_dare': List.from(_normalDares)..shuffle(),
+      'spicy_truth': List.from(_spicyTruths)..shuffle(),
+      'spicy_dare': List.from(_spicyDares)..shuffle(),
+    };
     _spinController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
     );
     _spinAnim = CurvedAnimation(parent: _spinController, curve: Curves.easeOutBack)
         .drive(Tween(begin: 0.0, end: 4 * pi));
+  }
+
+  Future<void> _fetchMorePrompts(String type, bool spicy, String key) async {
+    try {
+      final geminiService = GeminiService(apiKey: 'AIzaSyAZu2a2p5vLsMgB5cDjgWzSJTEAsLLoLCE');
+      final newPrompts = await geminiService.generateTruthOrDarePrompts(
+          type: type, count: 5, spicy: spicy);
+      if (mounted) {
+        setState(() {
+           final existing = _promptCache[key]!;
+           _promptCache[key]!.addAll(newPrompts.where((p) => !existing.contains(p)));
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -90,13 +113,19 @@ class _TruthOrDareScreenState extends State<TruthOrDareScreen>
       _currentCard = null;
     });
     _spinController.reset();
+    final type = _mode; // truth or dare
+    final key = '${_isSpicyMode ? 'spicy' : 'normal'}_$type';
+
+    // replenish if needed
+    if (_promptCache[key]!.length < 5) {
+       _fetchMorePrompts(type, _isSpicyMode, key);
+    }
+
     _spinController.forward().then((_) async {
-      final list = _mode == 'truth'
-          ? (_isSpicyMode ? _spicyTruths : _normalTruths)
-          : (_isSpicyMode ? _spicyDares : _normalDares);
+      final list = _promptCache[key]!;
       setState(() {
         _isSpinning = false;
-        _currentCard = list[Random().nextInt(list.length)];
+        _currentCard = list.isNotEmpty ? list.removeAt(0) : 'Tell your partner something you love about them.';
       });
       // --- Record Game Session for Points ---
       if (mounted) {
@@ -131,7 +160,7 @@ class _TruthOrDareScreenState extends State<TruthOrDareScreen>
               const Text('Spicy 🔥', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
               Switch(
                 value: _isSpicyMode,
-                activeColor: AppColors.primary,
+                        activeThumbColor: AppColors.primary,
                 onChanged: _isSpinning
                     ? null
                     : (val) {
