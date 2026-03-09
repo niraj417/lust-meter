@@ -40,10 +40,11 @@ class _HomeScreenState extends State<HomeScreen> {
       if (userModel != null) {
         final geminiService = GeminiService(apiKey: 'AIzaSyAZu2a2p5vLsMgB5cDjgWzSJTEAsLLoLCE');
         tip = await geminiService.generateRelationshipTip(
-          userName: userModel.name,
+        tip = await geminiService.generateRelationshipTip(
+          userName: userModel.displayName,
           lustScore: userModel.lustScore,
           emotionalScore: userModel.emotionalScore,
-          physicalScore: userModel.physicalScore,
+          physicalScore: 0,
         );
       } else {
         tip = await GeminiService.generateText(
@@ -144,8 +145,8 @@ class _LustScoreCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final score = userModel?.lustScore ?? 0;
     final emotionalScore = userModel?.emotionalScore ?? 0;
-    final physicalScore = userModel?.physicalScore ?? 0;
-    final bondScore = userModel?.bondScore ?? 0;
+    final physicalScore = 0;
+    final bondScore = 0;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -378,7 +379,7 @@ class _StreakCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final streak = userModel?.dailyStreak ?? 0;
+    final streak = userModel?.streak ?? 0;
 
     return Container(
       padding: const EdgeInsets.all(20),
