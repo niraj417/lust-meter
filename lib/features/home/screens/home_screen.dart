@@ -40,7 +40,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (userModel != null) {
         final geminiService = GeminiService(apiKey: 'AIzaSyAZu2a2p5vLsMgB5cDjgWzSJTEAsLLoLCE');
         tip = await geminiService.generateRelationshipTip(
-        tip = await geminiService.generateRelationshipTip(
           userName: userModel.displayName,
           lustScore: userModel.lustScore,
           emotionalScore: userModel.emotionalScore,
