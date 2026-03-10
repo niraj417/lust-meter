@@ -86,7 +86,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
-    final photoUrl = user?.photoUrl;
+    final photoURL = user?.photoURL;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -109,8 +109,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       backgroundColor: AppColors.surfaceElevated,
                       backgroundImage: _selectedImage != null 
                           ? FileImage(_selectedImage!) 
-                          : (photoUrl != null ? NetworkImage(photoUrl) : null) as ImageProvider?,
-                      child: (_selectedImage == null && photoUrl == null)
+                          : (photoURL != null ? NetworkImage(photoURL) : null) as ImageProvider?,
+                      child: (_selectedImage == null && photoURL == null)
                           ? const Icon(Icons.person, size: 50, color: AppColors.textSecondary)
                           : null,
                     ),

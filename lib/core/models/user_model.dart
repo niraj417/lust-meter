@@ -9,6 +9,7 @@ class UserModel {
   final int bondScore;
   final int streak;
   final int points;
+  final String? photoUrl;
 
   int get calculatedLustScore => ((emotionalScore + physicalScore + bondScore) / 3).round();
 
@@ -23,6 +24,7 @@ class UserModel {
     this.bondScore = 0,
     this.streak = 0,
     this.points = 0,
+    this.photoUrl,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map, String id) {
@@ -37,6 +39,7 @@ class UserModel {
       bondScore: map['bondScore'] ?? 0,
       streak: map['streak'] ?? map['dailyStreak'] ?? 0,
       points: map['points'] ?? map['totalPoints'] ?? 0,
+      photoUrl: map['photoUrl'],
     );
   }
 
@@ -51,6 +54,7 @@ class UserModel {
       'bondScore': bondScore,
       'streak': streak,
       'points': points,
+      'photoUrl': photoUrl,
     };
   }
 }
