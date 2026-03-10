@@ -1,5 +1,6 @@
-
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../../core/theme/app_theme.dart';
@@ -8,12 +9,14 @@ import '../../../services/database_service.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/models/user_model.dart';
 import 'package:provider/provider.dart';
+import '../../../core/models/partner_connection_model.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:rxdart/rxdart.dart';
 import '../../explore/models/kink_model.dart';
 import '../../explore/screens/position_detail_screen.dart';
 import '../../explore/screens/kink_detail_screen.dart';
 import '../../explore/models/position_model.dart';
+import '../../../services/gemini_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

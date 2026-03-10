@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_theme.dart';
 import '../models/kink_model.dart';
 import '../models/position_model.dart';
@@ -136,7 +138,6 @@ class _PositionsTabState extends State<_PositionsTab> {
     final descCtrl = TextEditingController();
     final emojiCtrl = TextEditingController(text: '🔥');
     final instructionCtrl = TextEditingController();
-    final tipsCtrl = TextEditingController();
     final tipsCtrl = TextEditingController();
     String selectedLevel = 'Intermediate';
     File? selectedImage;
