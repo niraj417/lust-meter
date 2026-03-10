@@ -143,7 +143,16 @@ class _TruthOrDareScreenState extends State<TruthOrDareScreen>
                 _currentCard = result;
                 _mode = mode;
                 _isSpicyMode = isSpicy;
+                _isSpinning = false;
+                _suggestedCard = null;
              });
+          } else if (status == 'spinning') {
+             setState(() {
+                _isSpinning = true;
+                _currentCard = null;
+                _suggestedCard = null;
+             });
+             _spinController.repeat();
           }
         }
       });
@@ -180,6 +189,14 @@ class _TruthOrDareScreenState extends State<TruthOrDareScreen>
       _spinAnim = CurvedAnimation(parent: _spinController, curve: Curves.easeOutBack)
           .drive(Tween(begin: 0.0, end: randomAngle));
     });
+
+    if (_isOnlineMode && _connectionId != null) {
+      DatabaseService().updateGameState(_connectionId!, 'truth_or_dare', {
+        'lastSpinner': context.read<AuthProvider>().user?.uid,
+        'status': 'spinning',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    }
 
     _playSpinSound();
     _spinController.reset();

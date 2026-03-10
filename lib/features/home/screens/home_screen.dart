@@ -4,12 +4,17 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/models/partner_connection_model.dart';
-import '../../../services/gemini_service.dart';
 import '../../../services/database_service.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/models/user_model.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+import 'package:rxdart/rxdart.dart';
+import '../../explore/models/kink_model.dart';
+import '../../explore/screens/position_detail_screen.dart';
+import '../../explore/screens/kink_detail_screen.dart';
+import '../../explore/models/position_model.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -439,6 +444,160 @@ class _StreakCard extends StatelessWidget {
           )),
         ),
       ]),
+    );
+  }
+}
+
+class _DiscoverySection extends StatefulWidget {
+  final String userId;
+  const _DiscoverySection({required this.userId});
+
+  @override
+  State<_DiscoverySection> createState() => _DiscoverySectionState();
+}
+
+class _DiscoverySectionState extends State<_DiscoverySection> {
+  final DatabaseService _db = DatabaseService();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Discover', style: TextStyle(
+              fontSize: 18, fontWeight: FontWeight.w700,
+              fontFamily: 'Inter', color: AppColors.textPrimary,
+            )),
+            TextButton(
+              onPressed: () => context.push(AppRoutes.savedCards),
+              child: const Text('Saved Cards', style: TextStyle(color: AppColors.primary, fontSize: 13)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          height: 380,
+          child: StreamBuilder<List<dynamic>>(
+            stream: _getDiscoveryStream(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final items = snapshot.data ?? [];
+              if (items.isEmpty) return const Center(child: Text('No new discoveries today!', style: TextStyle(color: Colors.white38)));
+              
+              // Shuffle for variety as requested
+              items.shuffle(Random(DateTime.now().day));
+
+              return CardSwiper(
+                cardsCount: items.length,
+                numberOfCardsDisplayed: 3,
+                backCardOffset: const Offset(20, 20),
+                padding: const EdgeInsets.all(0),
+                cardBuilder: (context, index, horizontalThresholdPercentage, verticalThresholdPercentage) {
+                  final item = items[index];
+                  if (item is PositionModel) return _PositionDiscoveryCard(pos: item);
+                  if (item is KinkModel) return _KinkDiscoveryCard(kink: item);
+                  return const SizedBox();
+                },
+                onSwipe: (prevIndex, currentIndex, direction) {
+                   final item = items[prevIndex];
+                   try {
+                     AudioPlayer().play(AssetSource('sounds/card_swipe.mp3'));
+                   } catch (_) {}
+                   
+                   if (direction == CardSwiperDirection.right) {
+                     // Love/Like
+                     if (item is PositionModel) _db.recordPositionInteraction(widget.userId, item.id, isLiked: true);
+                     if (item is KinkModel) _db.recordKinkInteraction(widget.userId, item.id, isLiked: true);
+                   }
+                   return true;
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Stream<List<dynamic>> _getDiscoveryStream() {
+    // Combine positions and kinks into one stream for the swiper
+    return CombineLatestStream.combine2(
+      _db.getPositionsStream(),
+      _db.getKinksFromDbStream(),
+      (List<PositionModel> p, List<KinkModel> k) => [...p, ...k],
+    );
+  }
+}
+
+class _PositionDiscoveryCard extends StatelessWidget {
+  final PositionModel pos;
+  const _PositionDiscoveryCard({required this.pos});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PositionDetailScreen(position: pos))),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+          image: pos.imageUrl != null ? DecorationImage(image: NetworkImage(pos.imageUrl!), fit: BoxFit.cover, opacity: 0.4) : null,
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(10)), child: Text(pos.emoji, style: const TextStyle(fontSize: 32))),
+            const SizedBox(height: 16),
+            Text(pos.name, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'Inter')),
+            const SizedBox(height: 8),
+            Text(pos.description, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+            const SizedBox(height: 12),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: AppColors.primary.withAlpha(50), borderRadius: BorderRadius.circular(8)), child: Text(pos.level, style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold))),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _KinkDiscoveryCard extends StatelessWidget {
+  final KinkModel kink;
+  const _KinkDiscoveryCard({required this.kink});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => KinkDetailScreen(kink: kink))),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
+          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [AppColors.surface, AppColors.secondary.withOpacity(0.1)]),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppColors.secondary.withOpacity(0.2), shape: BoxShape.circle), child: const Icon(Icons.auto_awesome, color: AppColors.secondary, size: 32)),
+            const SizedBox(height: 16),
+            Text(kink.title, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'Inter')),
+            const SizedBox(height: 8),
+            Text(kink.description, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+            const SizedBox(height: 12),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(8)), child: Text(kink.category, style: const TextStyle(color: Colors.white60, fontSize: 10, fontWeight: FontWeight.bold))),
+          ],
+        ),
+      ),
     );
   }
 }

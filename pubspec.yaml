@@ -48,6 +48,9 @@ dependencies:
   timeago: ^3.7.1
   image_picker: ^1.1.2
   audioplayers: ^6.1.0
+  rxdart: ^0.28.0
+  emoji_picker_flutter: ^3.0.0
+  giphy_get: ^3.6.1+1
 
 dev_dependencies:
   flutter_test:

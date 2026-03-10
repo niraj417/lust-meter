@@ -504,4 +504,92 @@ class DatabaseService {
     final uploadTask = await ref.putFile(file);
     return await uploadTask.ref.getDownloadURL();
   }
+
+  Future<String> uploadProfileImage(String uid, File file) async {
+    final ref = _storage.ref().child('profiles').child(uid).child('avatar.jpg');
+    final uploadTask = await ref.putFile(file);
+    final url = await uploadTask.ref.getDownloadURL();
+    await updateUserProfile(uid, {'photoUrl': url});
+    return url;
+  }
+
+  Future<String> uploadPositionImage(File file) async {
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final ref = _storage.ref().child('positions').child(fileName);
+    final uploadTask = await ref.putFile(file);
+    return await uploadTask.ref.getDownloadURL();
+  }
+
+  // --- Kink Categories ---
+  Future<List<String>> getKinkCategories() async {
+    final doc = await _firestore.collection('metadata').doc('kink_categories').get();
+    if (doc.exists && doc.data() != null) {
+      return List<String>.from(doc.data()!['categories'] ?? []);
+    }
+    return ['BDSM', 'Roleplay', 'Sensory', 'Power Play', 'General'];
+  }
+
+  Future<void> addKinkCategory(String category) async {
+    await _firestore.collection('metadata').doc('kink_categories').set({
+      'categories': FieldValue.arrayUnion([category])
+    }, SetOptions(merge: true));
+  }
+
+  // --- Saved / Liked Content ---
+  Stream<List<PositionModel>> getUserLikedPositionsStream(String userId) {
+    return _firestore
+        .collection(AppConstants.positionInteractionsCollection)
+        .where('userId', isEqualTo: userId)
+        .where('isLiked', isEqualTo: true)
+        .snapshots()
+        .asyncMap((snapshot) async {
+      final positionIds = snapshot.docs.map((doc) => doc.data()['positionId'] as String).toList();
+      if (positionIds.isEmpty) return [];
+      
+      final posSnap = await _firestore
+          .collection(AppConstants.positionsCollection)
+          .where(FieldPath.documentId, whereIn: positionIds)
+          .get();
+          
+      return posSnap.docs.map((doc) => PositionModel.fromMap(doc.data(), doc.id)).toList();
+    });
+  }
+
+  Stream<List<KinkModel>> getUserLikedKinksStream(String userId) {
+    return _firestore
+        .collection(AppConstants.kinkInteractionsCollection)
+        .where('userId', isEqualTo: userId)
+        .where('status', isEqualTo: 'liked')
+        .snapshots()
+        .asyncMap((snapshot) async {
+      final kinkIds = snapshot.docs.map((doc) => doc.data()['kinkId'] as String).toList();
+      if (kinkIds.isEmpty) return [];
+      
+      final kinkSnap = await _firestore
+          .collection(AppConstants.kinksCollection)
+          .where(FieldPath.documentId, whereIn: kinkIds)
+          .get();
+          
+      return kinkSnap.docs.map((doc) => KinkModel.fromMap(doc.data(), doc.id)).toList();
+    });
+  }
+
+  Stream<List<ChallengeModel>> getUserLikedChallengesStream(String userId) {
+    return _firestore
+        .collection(AppConstants.challengeInteractionsCollection)
+        .where('userId', isEqualTo: userId)
+        .where('status', isEqualTo: 'liked')
+        .snapshots()
+        .asyncMap((snapshot) async {
+      final challengeIds = snapshot.docs.map((doc) => doc.data()['challengeId'] as String).toList();
+      if (challengeIds.isEmpty) return [];
+      
+      final challengeSnap = await _firestore
+          .collection(AppConstants.challengesCollection)
+          .where(FieldPath.documentId, whereIn: challengeIds)
+          .get();
+          
+      return challengeSnap.docs.map((doc) => ChallengeModel.fromMap(doc.data(), doc.id)).toList();
+    });
+  }
 }

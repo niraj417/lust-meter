@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
@@ -16,6 +18,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _nameController;
   final DatabaseService _db = DatabaseService();
   bool _isLoading = false;
+  File? _selectedImage;
 
   @override
   void initState() {
@@ -30,6 +33,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() => _selectedImage = File(image.path));
+    }
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -38,10 +49,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final authProvider = context.read<AuthProvider>();
       final user = authProvider.user;
       if (user != null) {
+        String? photoUrl;
+        if (_selectedImage != null) {
+          photoUrl = await _db.uploadProfileImage(user.uid, _selectedImage!);
+        }
+
         await _db.updateUserProfile(user.uid, {
           'displayName': _nameController.text.trim(),
+          if (photoUrl != null) 'photoUrl': photoUrl,
         });
-        await user.updateDisplayName(_nameController.text.trim());
+
+        if (_selectedImage == null) {
+           await user.updateDisplayName(_nameController.text.trim());
+        }
+        
         await authProvider.refreshUser();
         
         if (mounted) {
@@ -64,6 +85,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().user;
+    final photoUrl = user?.photoUrl;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -77,21 +101,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Center(
+              Center(
                 child: Stack(
                   children: [
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: AppColors.surfaceElevated,
-                      child: Icon(Icons.person, size: 50, color: AppColors.textSecondary),
+                      backgroundImage: _selectedImage != null 
+                          ? FileImage(_selectedImage!) 
+                          : (photoUrl != null ? NetworkImage(photoUrl) : null) as ImageProvider?,
+                      child: (_selectedImage == null && photoUrl == null)
+                          ? const Icon(Icons.person, size: 50, color: AppColors.textSecondary)
+                          : null,
                     ),
                     Positioned(
                       bottom: 0,
                       right: 0,
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundColor: AppColors.primary,
-                        child: Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                      child: GestureDetector(
+                        onTap: _pickImage,
+                        child: const CircleAvatar(
+                          radius: 18,
+                          backgroundColor: AppColors.primary,
+                          child: Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                        ),
                       ),
                     ),
                   ],

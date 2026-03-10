@@ -84,6 +84,10 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
       _result = null;
     });
 
+    try {
+      AudioPlayer().play(AssetSource('sounds/wheel_spin.mp3'));
+    } catch (_) {}
+
     _controller.reset();
     _controller.forward().then((_) async {
       final currentSegments = _currentSegments;

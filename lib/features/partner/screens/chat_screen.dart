@@ -3,6 +3,8 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:giphy_get/giphy_get.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/message_model.dart';
@@ -313,10 +315,35 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 Row(
                   children: [
-                    TextButton.icon(
+                    IconButton(
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (context) => EmojiPicker(
+                            onEmojiSelected: (category, emoji) {
+                              _messageController.text += emoji.emoji;
+                            },
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.emoji_emotions_outlined, color: AppColors.primary, size: 24),
+                    ),
+                    IconButton(
+                      onPressed: () async {
+                        final gif = await GiphyGet.getGif(
+                          context: context,
+                          apiKey: 'AIzaSyAZu2a2p5vLsMgB5cDjgWzSJTEAsLLoLCE', // Using same key if compatible or dummy
+                          lang: GiphyLanguage.english,
+                        );
+                        if (gif != null && gif.images?.original?.url != null) {
+                          _sendMessage(imageUrl: gif.images!.original!.url, text: 'Sent a GIF');
+                        }
+                      },
+                      icon: const Icon(Icons.gif_box_outlined, color: AppColors.primary, size: 24),
+                    ),
+                    IconButton(
                       onPressed: _pickImage,
-                      icon: const Icon(Icons.add_a_photo_outlined, color: AppColors.primary, size: 20),
-                      label: const Text('Photo', style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
+                      icon: const Icon(Icons.add_a_photo_outlined, color: AppColors.primary, size: 24),
                     ),
                     Expanded(
                       child: TextField(
@@ -338,17 +365,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    ElevatedButton.icon(
+                    IconButton(
                       onPressed: _sendMessage,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        elevation: 0,
-                      ),
-                      icon: const Icon(Icons.send_rounded, size: 18),
-                      label: const Text('Send', style: TextStyle(fontWeight: FontWeight.bold)),
+                      icon: const Icon(Icons.send_rounded, color: AppColors.primary),
                     ),
                   ],
                 ),

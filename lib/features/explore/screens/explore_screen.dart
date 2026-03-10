@@ -137,7 +137,10 @@ class _PositionsTabState extends State<_PositionsTab> {
     final emojiCtrl = TextEditingController(text: '🔥');
     final instructionCtrl = TextEditingController();
     final tipsCtrl = TextEditingController();
+    final tipsCtrl = TextEditingController();
     String selectedLevel = 'Intermediate';
+    File? selectedImage;
+    bool isUploading = false;
 
     showModalBottomSheet(
       context: context,
@@ -160,6 +163,37 @@ class _PositionsTabState extends State<_PositionsTab> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const Text('Suggest New Position', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Inter')),
+                      const SizedBox(height: 16),
+                      // Image Picker UI
+                      GestureDetector(
+                        onTap: () async {
+                          final picker = ImagePicker();
+                          final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                          if (image != null) {
+                            setModalState(() => selectedImage = File(image.path));
+                          }
+                        },
+                        child: Container(
+                          height: 160,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF161224),
+                            borderRadius: BorderRadius.circular(12),
+                            image: selectedImage != null 
+                              ? DecorationImage(image: FileImage(selectedImage!), fit: BoxFit.cover)
+                              : null,
+                          ),
+                          child: selectedImage == null 
+                            ? const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_a_photo_outlined, color: AppColors.textHint, size: 40),
+                                  SizedBox(height: 8),
+                                  Text('Add Position Illustration', style: TextStyle(color: AppColors.textHint, fontSize: 12)),
+                                ],
+                              )
+                            : null,
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       Row(
                         children: [
@@ -246,33 +280,47 @@ class _PositionsTabState extends State<_PositionsTab> {
                         onPressed: () async {
                           if (nameCtrl.text.trim().isEmpty || descCtrl.text.trim().isEmpty) return;
                           
-                          final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                          final user = authProvider.user;
-                          if (user == null) return;
-                
-                          final newPos = PositionModel(
-                            id: '',
-                            name: nameCtrl.text.trim(),
-                            description: descCtrl.text.trim(),
-                            emoji: emojiCtrl.text.trim().isEmpty ? '🔥' : emojiCtrl.text.trim(),
-                            level: selectedLevel,
-                            colorHex: 'E63950', // Default
-                            detailedInstruction: instructionCtrl.text.trim(),
-                            tips: tipsCtrl.text.trim(),
-                            likes: 0,
-                            authorId: user.uid,
-                            createdAt: DateTime.now(),
-                          );
-                
-                          await _dbService.addPosition(newPos);
-                          if (context.mounted) Navigator.pop(context);
+                          setModalState(() => isUploading = true);
+                          
+                          try {
+                            String? imageUrl;
+                            if (selectedImage != null) {
+                              imageUrl = await _dbService.uploadPositionImage(selectedImage!);
+                            }
+
+                            final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                            final user = authProvider.user;
+                            if (user == null) return;
+                  
+                            final newPos = PositionModel(
+                              id: '',
+                              name: nameCtrl.text.trim(),
+                              description: descCtrl.text.trim(),
+                              emoji: emojiCtrl.text.trim().isEmpty ? '🔥' : emojiCtrl.text.trim(),
+                              level: selectedLevel,
+                              colorHex: 'E63950', // Default
+                              detailedInstruction: instructionCtrl.text.trim(),
+                              tips: tipsCtrl.text.trim(),
+                              imageUrl: imageUrl,
+                              likes: 0,
+                              authorId: user.uid,
+                              createdAt: DateTime.now(),
+                            );
+                  
+                            await _dbService.addPosition(newPos);
+                            if (context.mounted) Navigator.pop(context);
+                          } finally {
+                            setModalState(() => isUploading = false);
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text('Add Position', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                        child: isUploading 
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Add Position', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                       ),
                     ],
                   ),
@@ -343,6 +391,19 @@ class _PositionCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
+            if (pos.imageUrl != null)
+              Container(
+                height: 80,
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  image: DecorationImage(
+                    image: NetworkImage(pos.imageUrl!),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
             Text(
               pos.name,
               maxLines: 1,
@@ -767,7 +828,54 @@ class _KinksTabState extends State<_KinksTab> {
   final TextEditingController _searchController = TextEditingController();
   
   String _selectedCategory = 'All';
-  final List<String> _categories = ['All', 'Sensory', 'Power Play', 'Roleplay', 'Bondage', 'Other'];
+  List<String> _categories = ['All', 'Sensory', 'Power Play', 'Roleplay', 'Bondage', 'Other'];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    final cats = await _dbService.getKinkCategories();
+    if (mounted) {
+      setState(() {
+        _categories = ['All', ...cats];
+      });
+    }
+  }
+
+  void _showAddCategoryDialog() {
+    final ctrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text('Add Category', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: ctrl,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'Category Name',
+            hintStyle: TextStyle(color: AppColors.textHint),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              if (ctrl.text.trim().isNotEmpty) {
+                await _dbService.addKinkCategory(ctrl.text.trim());
+                await _loadCategories();
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -831,40 +939,61 @@ class _KinksTabState extends State<_KinksTab> {
                 // Chip Filters
                 SizedBox(
                   height: 40,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _categories.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final cat = _categories[index];
-                      final isSelected = cat == _selectedCategory;
-                      return GestureDetector(
-                        onTap: () => setState(() => _selectedCategory = cat),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFF381B53) : const Color(0xFF1E1A29),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isSelected ? AppColors.primary : Colors.transparent,
-                              width: 1,
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16),
+                        child: GestureDetector(
+                          onTap: _showAddCategoryDialog,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF1E1A29),
+                              shape: BoxShape.circle,
                             ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              cat,
-                              style: TextStyle(
-                                color: isSelected ? Colors.white : AppColors.textSecondary,
-                                fontFamily: 'Inter',
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                                fontSize: 13,
-                              ),
-                            ),
+                            child: const Icon(Icons.add, color: AppColors.primary, size: 20),
                           ),
                         ),
-                      );
-                    },
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ListView.separated(
+                          padding: const EdgeInsets.only(right: 16),
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _categories.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          itemBuilder: (context, index) {
+                            final cat = _categories[index];
+                            final isSelected = cat == _selectedCategory;
+                            return GestureDetector(
+                              onTap: () => setState(() => _selectedCategory = cat),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? const Color(0xFF381B53) : const Color(0xFF1E1A29),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected ? AppColors.primary : Colors.transparent,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    cat,
+                                    style: TextStyle(
+                                      color: isSelected ? Colors.white : AppColors.textSecondary,
+                                      fontFamily: 'Inter',
+                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 

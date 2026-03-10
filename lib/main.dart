@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'core/network/app_router.dart';
+import 'core/utils/seed_data.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +13,10 @@ void main() async {
   // Firebase initialisation — real config from firebase_options.dart
   await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform);
+
+  // Seed data (one-time)
+  // ignore: unawaited_futures
+  DataSeeder.seedKinks();
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

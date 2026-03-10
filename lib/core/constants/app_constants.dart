@@ -62,6 +62,7 @@ class AppRoutes {
   static const chat = '/chat/:connectionId';
   static const editProfile = '/profile/edit';
   static const notifications = '/profile/notifications';
+  static const savedCards = '/profile/saved-cards';
   static const privacyPolicy = '/profile/privacy-policy';
   static const helpFaq = '/profile/help-faq';
   static const about = '/profile/about';

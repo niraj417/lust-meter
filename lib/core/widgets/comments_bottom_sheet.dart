@@ -5,6 +5,7 @@ import '../../services/database_service.dart';
 import '../models/comment_model.dart';
 import '../theme/app_theme.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 
 class CommentsBottomSheet extends StatefulWidget {
   final String collection;
@@ -209,6 +210,19 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
             ),
             child: Row(
               children: [
+                IconButton(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      builder: (context) => EmojiPicker(
+                        onEmojiSelected: (category, emoji) {
+                          _commentController.text += emoji.emoji;
+                        },
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.emoji_emotions_outlined, color: AppColors.primary, size: 20),
+                ),
                 Expanded(
                   child: TextField(
                     controller: _commentController,

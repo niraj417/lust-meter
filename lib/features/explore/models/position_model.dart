@@ -9,6 +9,7 @@ class PositionModel {
   final String colorHex;
   final String detailedInstruction;
   final String tips;
+  final String? imageUrl;
 
   final int likes;
   final String? authorId;
@@ -23,6 +24,7 @@ class PositionModel {
     required this.colorHex,
     required this.detailedInstruction,
     required this.tips,
+    this.imageUrl,
     this.likes = 0,
     this.authorId,
     this.createdAt,
@@ -38,6 +40,7 @@ class PositionModel {
       colorHex: map['colorHex'] ?? 'E63950',
       detailedInstruction: map['detailedInstruction'] ?? '',
       tips: map['tips'] ?? '',
+      imageUrl: map['imageUrl'],
       likes: map['likes'] ?? 0,
       authorId: map['authorId'],
       createdAt: map['createdAt'] != null ? (map['createdAt'] as Timestamp).toDate() : null,
@@ -53,6 +56,7 @@ class PositionModel {
       'colorHex': colorHex,
       'detailedInstruction': detailedInstruction,
       'tips': tips,
+      'imageUrl': imageUrl,
       'likes': likes,
       'authorId': authorId,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),

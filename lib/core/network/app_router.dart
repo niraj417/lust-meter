@@ -19,6 +19,7 @@ import '../../features/consultation/screens/consultation_screen.dart';
 import '../../features/partner/screens/chat_screen.dart';
 import '../../features/partner/screens/chat_list_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
+import '../../features/profile/screens/saved_cards_screen.dart';
 import '../../features/profile/screens/notifications_screen.dart';
 import '../../features/profile/screens/privacy_policy_screen.dart';
 import '../../features/profile/screens/help_faq_screen.dart';
@@ -86,6 +87,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.notifications,
       builder: (ctx, state) => const NotificationsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.savedCards,
+      builder: (ctx, state) => const SavedCardsScreen(),
     ),
     GoRoute(
       path: AppRoutes.privacyPolicy,
