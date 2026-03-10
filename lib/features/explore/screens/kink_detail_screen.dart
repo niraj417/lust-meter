@@ -270,6 +270,22 @@ class _KinkDetailScreenState extends State<KinkDetailScreen> {
                               ),
                             ),
                           ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.favorite_rounded, color: AppColors.primary, size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${widget.kink.likes} total likes',
+                                style: const TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 12,
+                                  fontFamily: 'Inter',
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       );
                     },

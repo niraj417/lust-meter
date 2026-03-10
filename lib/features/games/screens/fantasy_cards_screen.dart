@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../services/gemini_service.dart';
+import '../../../services/database_service.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class FantasyCardsScreen extends StatefulWidget {
   const FantasyCardsScreen({super.key});
@@ -128,8 +131,29 @@ class _FantasyCardsScreenState extends State<FantasyCardsScreen> {
     _isLoadingMore = true;
     try {
       final isSpicy = _isSpicyMode;
+      
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final uid = authProvider.user?.uid;
+      
+      String? userName;
+      String? partnerName;
+
+      if (uid != null) {
+        final userModel = await DatabaseService().getUser(uid);
+        userName = userModel?.displayName;
+        if (userModel?.partnerId != null) {
+          final partnerModel = await DatabaseService().getUser(userModel!.partnerId!);
+          partnerName = partnerModel?.displayName;
+        }
+      }
+
       final geminiService = GeminiService(apiKey: 'AIzaSyAZu2a2p5vLsMgB5cDjgWzSJTEAsLLoLCE');
-      final newPrompts = await geminiService.generateFantasyCards(count: 3, spicy: isSpicy);
+      final newPrompts = await geminiService.generateFantasyCards(
+        count: 3, 
+        spicy: isSpicy,
+        userName: userName,
+        partnerName: partnerName,
+      );
       final newCards = newPrompts.map((p) => _FantasyCard(
         emoji: isSpicy ? '🔥' : '💖',
         title: 'New Fantasy',
@@ -146,7 +170,8 @@ class _FantasyCardsScreenState extends State<FantasyCardsScreen> {
           }
         });
       }
-    } catch (_) {} finally {
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _isLoadingMore = false);
     }
   }
@@ -220,6 +245,10 @@ class _FantasyCardsScreenState extends State<FantasyCardsScreen> {
                 setState(() {
                   if (dir == CardSwiperDirection.right) {
                     _liked++;
+                    final uid = context.read<AuthProvider>().user?.uid;
+                    if (uid != null) {
+                      DatabaseService().addPoints(uid, 1, category: 'bondScore');
+                    }
                   } else {
                     _passed++;
                   }

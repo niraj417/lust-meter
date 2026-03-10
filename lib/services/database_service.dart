@@ -13,6 +13,8 @@ import '../core/models/user_model.dart';
 import '../../features/explore/models/challenge_model.dart';
 import '../../features/explore/models/challenge_interaction_model.dart';
 import '../../core/models/comment_model.dart';
+import '../../features/explore/models/position_model.dart';
+import '../../features/explore/models/kink_model.dart';
 
 class DatabaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -34,9 +36,24 @@ class DatabaseService {
     });
   }
 
-  Future<void> addPoints(String uid, int points) async {
+  Future<void> addPoints(String uid, int points, {String category = 'emotionalScore'}) async {
+    final userDoc = await _firestore.collection(AppConstants.usersCollection).doc(uid).get();
+    if (!userDoc.exists) return;
+    
+    final data = userDoc.data()!;
+    int emotional = data['emotionalScore'] ?? 0;
+    int physical = data['physicalScore'] ?? 0;
+    int bond = data['bondScore'] ?? 0;
+
+    if (category == 'emotionalScore') emotional += points;
+    else if (category == 'physicalScore') physical += points;
+    else if (category == 'bondScore') bond += points;
+
+    final newLustScore = ((emotional + physical + bond) / 3).round();
+
     await _firestore.collection(AppConstants.usersCollection).doc(uid).update({
-      'lustScore': FieldValue.increment(points),
+      category: FieldValue.increment(points),
+      'lustScore': newLustScore,
       'points': FieldValue.increment(points),
     });
   }
@@ -88,6 +105,36 @@ class DatabaseService {
           .map((doc) => PartnerConnectionModel.fromMap(doc.data(), doc.id))
           .toList();
     });
+  }
+
+  Future<PartnerConnectionModel?> getFirstConnection(String uid) async {
+    final snapshot = await _firestore
+        .collection(AppConstants.partnersCollection)
+        .where('users', arrayContains: uid)
+        .limit(1)
+        .get();
+    if (snapshot.docs.isNotEmpty) {
+      return PartnerConnectionModel.fromMap(snapshot.docs.first.data(), snapshot.docs.first.id);
+    }
+    return null;
+  }
+
+  Future<void> updateGameState(String connectionId, String gameName, Map<String, dynamic> state) async {
+    await _firestore
+        .collection(AppConstants.partnersCollection)
+        .doc(connectionId)
+        .collection('games')
+        .doc(gameName)
+        .set(state, SetOptions(merge: true));
+  }
+
+  Stream<DocumentSnapshot> getGameStateStream(String connectionId, String gameName) {
+    return _firestore
+        .collection(AppConstants.partnersCollection)
+        .doc(connectionId)
+        .collection('games')
+        .doc(gameName)
+        .snapshots();
   }
 
   Future<void> deletePartnerConnection(String connectionId) async {
@@ -264,7 +311,66 @@ class DatabaseService {
     });
   }
 
-  // --- Kinks Interactions ---
+  // --- Positions ---
+  Stream<List<PositionModel>> getPositionsStream() {
+    return _firestore
+        .collection(AppConstants.positionsCollection)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => PositionModel.fromMap(doc.data(), doc.id)).toList());
+  }
+
+  Future<void> addPosition(PositionModel position) async {
+    await _firestore.collection(AppConstants.positionsCollection).add(position.toMap());
+  }
+
+  Future<void> recordPositionInteraction(String userId, String positionId, {bool? isLiked}) async {
+    final docId = '${userId}_$positionId';
+    final docRef = _firestore.collection(AppConstants.positionInteractionsCollection).doc(docId);
+    
+    final updateData = <String, dynamic>{
+      'userId': userId,
+      'positionId': positionId,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+    
+    if (isLiked != null) {
+      updateData['isLiked'] = isLiked;
+      // Increment or decrement likes on the position document
+      await _firestore.collection(AppConstants.positionsCollection).doc(positionId).update({
+        'likes': FieldValue.increment(isLiked ? 1 : -1)
+      });
+    }
+
+    await docRef.set(updateData, SetOptions(merge: true));
+  }
+
+  Stream<bool> getPositionInteractionStream(String userId, String positionId) {
+    final docId = '${userId}_$positionId';
+    return _firestore
+        .collection(AppConstants.positionInteractionsCollection)
+        .doc(docId)
+        .snapshots()
+        .map((doc) {
+      if (!doc.exists) return false;
+      return doc.data()?['isLiked'] == true;
+    });
+  }
+
+  // --- Kinks ---
+  Stream<List<KinkModel>> getKinksFromDbStream() {
+    return _firestore
+        .collection(AppConstants.kinksCollection)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => KinkModel.fromMap(doc.data(), doc.id)).toList());
+  }
+
+  Future<void> addKink(KinkModel kink) async {
+    await _firestore.collection(AppConstants.kinksCollection).add(kink.toMap());
+  }
+
+  // --- Kink Interactions ---
   Future<void> recordKinkInteraction(String userId, String kinkId, {bool? isLiked, bool? isTried}) async {
     final docId = '${userId}_$kinkId';
     final docRef = _firestore.collection(AppConstants.kinkInteractionsCollection).doc(docId);

@@ -82,7 +82,7 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to upload image')),
+          SnackBar(content: Text('Failed to upload image: $e')),
         );
       }
     } finally {
@@ -313,9 +313,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.add_a_photo_outlined, color: AppColors.primary),
+                    TextButton.icon(
                       onPressed: _pickImage,
+                      icon: const Icon(Icons.add_a_photo_outlined, color: AppColors.primary, size: 20),
+                      label: const Text('Photo', style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
                     ),
                     Expanded(
                       child: TextField(
@@ -337,13 +338,17 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    CircleAvatar(
-                      backgroundColor: AppColors.primary,
-                      radius: 24,
-                      child: IconButton(
-                        icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                        onPressed: _sendMessage,
+                    ElevatedButton.icon(
+                      onPressed: _sendMessage,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        elevation: 0,
                       ),
+                      icon: const Icon(Icons.send_rounded, size: 18),
+                      label: const Text('Send', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),

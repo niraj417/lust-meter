@@ -146,8 +146,9 @@ class _PartnerScreenState extends State<PartnerScreen> {
                                   ),
                                   title: Text(name, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary) ?? const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
                                   subtitle: Text('Connected via ${conn.toMap()['type'] == 'kink' ? 'Kink' : 'Invite'}'),
-                                  trailing: IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                                  trailing: TextButton.icon(
+                                    icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
+                                    label: const Text('Remove', style: TextStyle(color: AppColors.error, fontSize: 12)),
                                     onPressed: () async {
                                       final confirm = await showDialog<bool>(
                                         context: context,
@@ -282,18 +283,27 @@ class _NotConnected extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                GestureDetector(
-                  onTap: onCopy,
-                  child: AnimatedSwitcher(
+                TextButton.icon(
+                  onPressed: onCopy,
+                  icon: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 200),
                     child: Icon(
                       codeCopied
                           ? Icons.check_circle_rounded
                           : Icons.copy_rounded,
                       key: ValueKey(codeCopied),
+                      size: 20,
                       color: codeCopied
                           ? AppColors.success
-                          : AppColors.textHint,
+                          : AppColors.primary,
+                    ),
+                  ),
+                  label: Text(
+                    codeCopied ? 'Copied!' : 'Copy',
+                    style: TextStyle(
+                      color: codeCopied ? AppColors.success : AppColors.primary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),

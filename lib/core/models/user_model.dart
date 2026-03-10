@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class UserModel {
   final String uid;
   final String email;
@@ -11,6 +9,8 @@ class UserModel {
   final int bondScore;
   final int streak;
   final int points;
+
+  int get calculatedLustScore => ((emotionalScore + physicalScore + bondScore) / 3).round();
 
   UserModel({
     required this.uid,

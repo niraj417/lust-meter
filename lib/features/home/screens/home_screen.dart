@@ -140,16 +140,18 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (ctx, snap) {
               final connections = snap.data ?? [];
               if (connections.isNotEmpty) {
-                return IconButton(
-                  icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.textSecondary),
+                return TextButton.icon(
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.textSecondary, size: 20),
+                  label: const Text('Chat', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                   onPressed: () => context.push(AppRoutes.chatList),
                 );
               }
               return const SizedBox();
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
+          TextButton.icon(
+            icon: const Icon(Icons.notifications_none_rounded, color: AppColors.textSecondary, size: 20),
+            label: const Text('Alerts', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
             onPressed: () => context.push(AppRoutes.notifications),
           ),
         ],
@@ -166,8 +168,8 @@ class _LustScoreCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final score = userModel?.lustScore ?? 0;
     final emotionalScore = userModel?.emotionalScore ?? 0;
-    final physicalScore = 0;
-    final bondScore = 0;
+    final physicalScore = userModel?.physicalScore ?? 0;
+    final bondScore = userModel?.bondScore ?? 0;
 
     return Container(
       padding: const EdgeInsets.all(24),

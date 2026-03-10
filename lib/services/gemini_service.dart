@@ -69,15 +69,21 @@ Ensure this tip is completely unique and different from previous ones. (Context 
 
   /// Generate Truth or Dare prompts
   Future<List<String>> generateTruthOrDarePrompts({
-    required String type,
-    required int count,
+    required String type, 
+    required int count, 
     bool spicy = false,
+    String? userName,
+    String? partnerName,
   }) async {
-    final intensity = spicy ? 'moderately spicy but tasteful' : 'fun and light';
+    final intensity = spicy ? 'spicy and daring' : 'relationship-building and fun';
+    final context = (userName != null && partnerName != null) 
+        ? "Personalize these for $userName and $partnerName. " 
+        : "";
+
     final prompt = '''
-Generate $count $intensity "$type" prompts for a couple's Truth or Dare game.
-Return ONLY a numbered list, one per line, no extra text.
-Make them playful and relationship-building.
+$context Generate $count $intensity $type prompts for a couples game.
+Keep them engaging and suitable for a relationship context. 
+Return ONLY a numbered list, one per line.
 ''';
     final raw = await _generate(prompt);
     return raw
@@ -89,11 +95,19 @@ Make them playful and relationship-building.
   }
 
   /// Generate compatibility quiz questions
-  Future<List<Map<String, dynamic>>> generateQuizQuestions(
-      {required int count, bool spicy = false}) async {
+  Future<List<Map<String, dynamic>>> generateQuizQuestions({
+    required int count, 
+    bool spicy = false,
+    String? userName,
+    String? partnerName,
+  }) async {
     final intensity = spicy ? 'spicy and intimately revealing' : 'relationship-building';
+    final context = (userName != null && partnerName != null) 
+        ? "Personalize these for $userName and $partnerName. " 
+        : "";
+    
     final prompt = '''
-Create $count $intensity multiple-choice quiz questions a couple can answer about each other.
+$context Create $count $intensity multiple-choice quiz questions a couple can answer about each other.
 Format each as JSON: {"question": "...", "options": ["A", "B", "C", "D"]}
 Return a JSON array only, no markdown or commentary.
 ''';
@@ -108,10 +122,19 @@ Return a JSON array only, no markdown or commentary.
   }
 
   /// Generate fantasy card prompts
-  Future<List<String>> generateFantasyCards({required int count, bool spicy = false}) async {
+  Future<List<String>> generateFantasyCards({
+    required int count, 
+    bool spicy = false,
+    String? userName,
+    String? partnerName,
+  }) async {
     final intensity = spicy ? 'intensely sensual and spicy' : 'romantic and sensual';
+    final context = (userName != null && partnerName != null) 
+        ? "Personalize these for $userName and $partnerName. " 
+        : "";
+
     final prompt = '''
-Generate $count $intensity "Fantasy Card" scenarios for an adult couple.
+$context Generate $count $intensity "Fantasy Card" scenarios for an adult couple.
 Keep them tasteful but exciting. Return ONLY a numbered list, one per line.
 ''';
     final raw = await _generate(prompt);

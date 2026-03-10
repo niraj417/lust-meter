@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class KinkModel {
   final String id;
   final String title;
@@ -8,6 +10,9 @@ class KinkModel {
   final String colorHex;
   final String? safetyTips;
 
+  final String? authorId;
+  final DateTime? createdAt;
+
   KinkModel({
     required this.id,
     required this.title,
@@ -17,6 +22,8 @@ class KinkModel {
     required this.iconName,
     required this.colorHex,
     this.safetyTips,
+    this.authorId,
+    this.createdAt,
   });
 
   factory KinkModel.fromMap(Map<String, dynamic> map, String id) {
@@ -29,6 +36,8 @@ class KinkModel {
       iconName: map['iconName'] ?? 'star',
       colorHex: map['colorHex'] ?? '9B30FF',
       safetyTips: map['safetyTips'],
+      authorId: map['authorId'],
+      createdAt: map['createdAt'] != null ? (map['createdAt'] as Timestamp).toDate() : null,
     );
   }
 
@@ -41,6 +50,8 @@ class KinkModel {
       'iconName': iconName,
       'colorHex': colorHex,
       'safetyTips': safetyTips,
+      'authorId': authorId,
+      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
     };
   }
 }

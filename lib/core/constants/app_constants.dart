@@ -8,6 +8,7 @@ class AppConstants {
   static const partnersCollection = 'partners';
   static const partnerRequestsCollection = 'partner_requests';
   static const positionsCollection = 'positions';
+  static const positionInteractionsCollection = 'position_interactions';
   static const challengesCollection = 'challenges';
   static const challengeInteractionsCollection = 'challenge_interactions';
   static const kinksCollection = 'kinks';
@@ -25,6 +26,8 @@ class AppConstants {
   static const fieldPartnerId = 'partnerId';
   static const fieldLustScore = 'lustScore';
   static const fieldEmotionalScore = 'emotionalScore';
+  static const fieldPhysicalScore = 'physicalScore';
+  static const fieldBondScore = 'bondScore';
 
   // Gemini
   static const geminiModel = 'gemini-2.0-flash';

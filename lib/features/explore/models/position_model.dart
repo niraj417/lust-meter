@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class PositionModel {
   final String id;
   final String name;
@@ -8,6 +10,10 @@ class PositionModel {
   final String detailedInstruction;
   final String tips;
 
+  final int likes;
+  final String? authorId;
+  final DateTime? createdAt;
+
   PositionModel({
     required this.id,
     required this.name,
@@ -17,6 +23,9 @@ class PositionModel {
     required this.colorHex,
     required this.detailedInstruction,
     required this.tips,
+    this.likes = 0,
+    this.authorId,
+    this.createdAt,
   });
 
   factory PositionModel.fromMap(Map<String, dynamic> map, String id) {
@@ -29,6 +38,9 @@ class PositionModel {
       colorHex: map['colorHex'] ?? 'E63950',
       detailedInstruction: map['detailedInstruction'] ?? '',
       tips: map['tips'] ?? '',
+      likes: map['likes'] ?? 0,
+      authorId: map['authorId'],
+      createdAt: map['createdAt'] != null ? (map['createdAt'] as Timestamp).toDate() : null,
     );
   }
 
@@ -41,6 +53,9 @@ class PositionModel {
       'colorHex': colorHex,
       'detailedInstruction': detailedInstruction,
       'tips': tips,
+      'likes': likes,
+      'authorId': authorId,
+      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
     };
   }
 }

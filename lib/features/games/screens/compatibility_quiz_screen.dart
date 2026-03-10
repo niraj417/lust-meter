@@ -84,8 +84,28 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
   Future<void> _fetchQuestions() async {
     setState(() => _isFetchingQuestions = true);
     try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final uid = authProvider.user?.uid;
+      
+      String? userName;
+      String? partnerName;
+
+      if (uid != null) {
+        final userModel = await DatabaseService().getUser(uid);
+        userName = userModel?.displayName;
+        if (userModel?.partnerId != null) {
+          final partnerModel = await DatabaseService().getUser(userModel!.partnerId!);
+          partnerName = partnerModel?.displayName;
+        }
+      }
+
       final geminiService = GeminiService(apiKey: 'AIzaSyAZu2a2p5vLsMgB5cDjgWzSJTEAsLLoLCE');
-      final fetched = await geminiService.generateQuizQuestions(count: 5, spicy: _isSpicyMode);
+      final fetched = await geminiService.generateQuizQuestions(
+        count: 5, 
+        spicy: _isSpicyMode,
+        userName: userName,
+        partnerName: partnerName,
+      );
       if (mounted) {
         setState(() {
           _dynamicQuestions = fetched.isNotEmpty ? fetched : (_isSpicyMode ? _spicyQuestions : _normalQuestions);
@@ -133,6 +153,8 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
           pointsAwarded: 10,
           playedAt: DateTime.now(),
         ));
+        // Add emotional points for completing the quiz
+        await DatabaseService().addPoints(uid, 5, category: 'emotionalScore');
       } catch (_) {}
     }
 
