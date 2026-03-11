@@ -3,14 +3,15 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:giphy_flutter_sdk/giphy_flutter_sdk.dart';
+import 'package:giphy_flutter_sdk/giphy_dialog.dart';
+import 'package:giphy_flutter_sdk/dto/giphy_media.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/message_model.dart';
 import '../../../services/database_service.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../../core/constants/app_constants.dart';
+
 
 class ChatScreen extends StatefulWidget {
   final String connectionId;
@@ -20,7 +21,7 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen> implements GiphyMediaSelectionListener {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   final ImagePicker _picker = ImagePicker();
@@ -32,6 +33,19 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isSending = false;
 
   final Set<String> _revealedMessages = {};
+
+  @override
+  void onMediaSelect(GiphyMedia media) {
+    if (media.url != null) {
+      _sendMessage(imageUrl: media.url, text: 'Sent a GIF');
+    }
+    GiphyDialog.instance.removeListener(this);
+  }
+
+  @override
+  void onDismiss() {
+    GiphyDialog.instance.removeListener(this);
+  }
 
   Future<void> _sendMessage({String? text, String? imageUrl}) async {
     final uid = context.read<AuthProvider>().user?.uid;
@@ -320,15 +334,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     IconButton(
                       onPressed: () async {
                         try {
-                          // Note: According to giphy_flutter_sdk docs, we might need different keys for Android/iOS
-                          // but for now we use the one provided.
-                          final gif = await GiphySDK.sharedContent.showSelection(
-                            apiKey: AppConstants.giphyApiKey,
-                          );
-                          
-                          if (gif != null && gif.url != null) {
-                            _sendMessage(imageUrl: gif.url, text: 'Sent a GIF');
-                          }
+                          GiphyDialog.instance.addListener(this);
+                          GiphyDialog.instance.show();
                         } catch (e) {
                           if (mounted) {
                              ScaffoldMessenger.of(context).showSnackBar(

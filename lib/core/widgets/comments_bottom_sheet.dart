@@ -5,8 +5,9 @@ import '../../services/database_service.dart';
 import '../models/comment_model.dart';
 import '../theme/app_theme.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import 'package:giphy_flutter_sdk/giphy_flutter_sdk.dart';
-import '../../core/constants/app_constants.dart';
+import 'package:giphy_flutter_sdk/giphy_dialog.dart';
+import 'package:giphy_flutter_sdk/dto/giphy_media.dart';
+
 
 class CommentsBottomSheet extends StatefulWidget {
   final String collection;
@@ -22,9 +23,23 @@ class CommentsBottomSheet extends StatefulWidget {
   State<CommentsBottomSheet> createState() => _CommentsBottomSheetState();
 }
 
-class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
+class _CommentsBottomSheetState extends State<CommentsBottomSheet> implements GiphyMediaSelectionListener {
   final TextEditingController _commentController = TextEditingController();
   final DatabaseService _dbService = DatabaseService();
+
+  @override
+  void onMediaSelect(GiphyMedia media) {
+    if (media.url != null) {
+      _commentController.text += ' ${media.url} ';
+      _postComment();
+    }
+    GiphyDialog.instance.removeListener(this);
+  }
+
+  @override
+  void onDismiss() {
+    GiphyDialog.instance.removeListener(this);
+  }
 
   Future<void> _postComment() async {
     final text = _commentController.text.trim();
@@ -214,13 +229,8 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                 IconButton(
                   onPressed: () async {
                     try {
-                      final gif = await GiphySDK.sharedContent.showSelection(
-                        apiKey: AppConstants.giphyApiKey,
-                      );
-                      if (gif != null && gif.url != null) {
-                        _commentController.text += ' ${gif.url} ';
-                        _postComment();
-                      }
+                      GiphyDialog.instance.addListener(this);
+                      GiphyDialog.instance.show();
                     } catch (e) {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(

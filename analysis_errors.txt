@@ -1,0 +1,115 @@
+Analyzing lust_meter...                                         
+
+   info - Parameter 'key' could be a super parameter - lib\core\widgets\comments_bottom_sheet.dart:15:9 - use_super_parameters
+   info - Unnecessary use of multiple underscores - lib\core\widgets\comments_bottom_sheet.dart:119:41 - unnecessary_underscores
+  error - Undefined name 'GiphySDK' - lib\core\widgets\comments_bottom_sheet.dart:217:41 - undefined_identifier
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\core\widgets\comments_bottom_sheet.dart:226:46 - use_build_context_synchronously
+warning - Unused import: 'dart:io' - lib\features\explore\screens\explore_screen.dart:1:8 - unused_import
+warning - Unused import: 'package:image_picker/image_picker.dart' - lib\features\explore\screens\explore_screen.dart:3:8 - unused_import
+warning - Unused import: '../models/kink_model.dart' - lib\features\explore\screens\explore_screen.dart:5:8 - unused_import
+warning - Unused import: '../models/position_model.dart' - lib\features\explore\screens\explore_screen.dart:6:8 - unused_import
+warning - Unused import: 'kink_detail_screen.dart' - lib\features\explore\screens\explore_screen.dart:7:8 - unused_import
+warning - Unused import: 'position_detail_screen.dart' - lib\features\explore\screens\explore_screen.dart:8:8 - unused_import
+warning - Unused import: '../../auth/providers/auth_provider.dart' - lib\features\explore\screens\explore_screen.dart:9:8 - unused_import
+warning - Unused import: 'package:provider/provider.dart' - lib\features\explore\screens\explore_screen.dart:10:8 - unused_import
+warning - Unused import: '../models/challenge_model.dart' - lib\features\explore\screens\explore_screen.dart:12:8 - unused_import
+warning - Unused import: '../models/challenge_interaction_model.dart' - lib\features\explore\screens\explore_screen.dart:13:8 - unused_import
+warning - Unused import: '../../../core/constants/app_constants.dart' - lib\features\explore\screens\explore_screen.dart:14:8 - unused_import
+warning - Unused import: '../../../core/widgets/comments_bottom_sheet.dart' - lib\features\explore\screens\explore_screen.dart:15:8 - unused_import
+  error - The method '_ChallengesTab' isn't defined for the type '_ExploreScreenState' - lib\features\explore\screens\explore_screen.dart:66:11 - undefined_method
+  error - The values in a const list literal must be constants - lib\features\explore\screens\explore_screen.dart:66:11 - non_constant_list_element
+  error - The method '_KinksTab' isn't defined for the type '_ExploreScreenState' - lib\features\explore\screens\explore_screen.dart:67:11 - undefined_method
+  error - The values in a const list literal must be constants - lib\features\explore\screens\explore_screen.dart:67:11 - non_constant_list_element
+  error - Missing concrete implementation of 'State.build' - lib\features\explore\screens\explore_screen.dart:84:7 - non_abstract_class_inherits_abstract_member
+   info - The private field _selectedCategory could be 'final' - lib\features\explore\screens\explore_screen.dart:86:10 - prefer_final_fields
+warning - The value of the field '_selectedCategory' isn't used - lib\features\explore\screens\explore_screen.dart:86:10 - unused_field
+warning - The value of the field '_categories' isn't used - lib\features\explore\screens\explore_screen.dart:87:16 - unused_field
+  error - Unterminated multi-line comment - lib\features\explore\screens\explore_screen.dart:1451:3 - unterminated_multi_line_comment
+  error - Expected to find '}' - lib\features\explore\screens\explore_screen.dart:1452:1 - expected_token
+   info - The private field _sentRequests could be 'final' - lib\features\explore\screens\kink_partners_screen.dart:20:15 - prefer_final_fields
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\explore\screens\kink_partners_screen.dart:96:62 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\explore\screens\position_detail_screen.dart:54:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\explore\screens\position_detail_screen.dart:84:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\explore\screens\position_detail_screen.dart:150:30 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\explore\screens\position_detail_screen.dart:152:49 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\features\games\screens\compatibility_quiz_screen.dart:165:7 - use_build_context_synchronously
+  error - Too many positional arguments: 0 expected, but 1 found - lib\features\games\screens\spin_wheel_screen.dart:479:15 - extra_positional_arguments_could_be_named
+  error - Expected to find ')' - lib\features\games\screens\spin_wheel_screen.dart:480:11 - expected_token
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\games\screens\spin_wheel_screen.dart:525:55 - deprecated_member_use
+warning - Unused import: 'package:audioplayers/audioplayers.dart' - lib\features\games\screens\truth_or_dare_screen.dart:5:8 - unused_import
+  error - The named parameter 'builder' is required, but there's no corresponding argument - lib\features\games\screens\truth_or_dare_screen.dart:577:26 - missing_required_argument
+  error - The named parameter 'shape' isn't defined - lib\features\games\screens\truth_or_dare_screen.dart:579:27 - undefined_named_parameter
+  error - The named parameter 'gradient' isn't defined - lib\features\games\screens\truth_or_dare_screen.dart:580:27 - undefined_named_parameter
+  error - The named parameter 'boxShadow' isn't defined - lib\features\games\screens\truth_or_dare_screen.dart:583:27 - undefined_named_parameter
+  error - The argument for the named parameter 'child' was already specified - lib\features\games\screens\truth_or_dare_screen.dart:594:25 - duplicate_named_argument
+  error - Expected to find ']' - lib\features\games\screens\truth_or_dare_screen.dart:598:21 - expected_token
+  error - Expected to find ']' - lib\features\games\screens\truth_or_dare_screen.dart:599:19 - expected_token
+  error - Expected an identifier - lib\features\games\screens\truth_or_dare_screen.dart:601:15 - missing_identifier
+  error - Expected to find ')' - lib\features\games\screens\truth_or_dare_screen.dart:601:15 - expected_token
+  error - Expected to find ';' - lib\features\games\screens\truth_or_dare_screen.dart:602:13 - expected_token
+warning - Dead code - lib\features\games\screens\truth_or_dare_screen.dart:602:14 - dead_code
+  error - Expected an identifier - lib\features\games\screens\truth_or_dare_screen.dart:602:14 - missing_identifier
+  error - Unexpected text ';' - lib\features\games\screens\truth_or_dare_screen.dart:602:14 - unexpected_token
+  error - Expected to find ';' - lib\features\games\screens\truth_or_dare_screen.dart:603:38 - expected_token
+  error - Expected an identifier - lib\features\games\screens\truth_or_dare_screen.dart:603:39 - missing_identifier
+  error - Unexpected text ';' - lib\features\games\screens\truth_or_dare_screen.dart:603:39 - unexpected_token
+  error - Expected to find ';' - lib\features\games\screens\truth_or_dare_screen.dart:675:13 - expected_token
+  error - Expected an identifier - lib\features\games\screens\truth_or_dare_screen.dart:675:14 - missing_identifier
+  error - Unexpected text ';' - lib\features\games\screens\truth_or_dare_screen.dart:675:14 - unexpected_token
+  error - Expected to find ';' - lib\features\games\screens\truth_or_dare_screen.dart:678:38 - expected_token
+  error - Expected an identifier - lib\features\games\screens\truth_or_dare_screen.dart:678:39 - missing_identifier
+  error - Unexpected text ';' - lib\features\games\screens\truth_or_dare_screen.dart:678:39 - unexpected_token
+  error - Expected to find ';' - lib\features\games\screens\truth_or_dare_screen.dart:710:13 - expected_token
+  error - Expected an identifier - lib\features\games\screens\truth_or_dare_screen.dart:710:14 - missing_identifier
+  error - Unexpected text ';' - lib\features\games\screens\truth_or_dare_screen.dart:710:14 - unexpected_token
+  error - Expected to find ';' - lib\features\games\screens\truth_or_dare_screen.dart:711:38 - expected_token
+  error - Expected an identifier - lib\features\games\screens\truth_or_dare_screen.dart:711:39 - missing_identifier
+  error - Expected to find ';' - lib\features\games\screens\truth_or_dare_screen.dart:711:39 - expected_token
+  error - Unexpected text ';' - lib\features\games\screens\truth_or_dare_screen.dart:711:39 - unexpected_token
+  error - Expected an identifier - lib\features\games\screens\truth_or_dare_screen.dart:712:11 - missing_identifier
+  error - Expected to find ';' - lib\features\games\screens\truth_or_dare_screen.dart:712:11 - expected_token
+  error - Unexpected text ';' - lib\features\games\screens\truth_or_dare_screen.dart:712:11 - unexpected_token
+  error - Expected an identifier - lib\features\games\screens\truth_or_dare_screen.dart:712:12 - missing_identifier
+  error - Expected to find ';' - lib\features\games\screens\truth_or_dare_screen.dart:712:12 - expected_token
+  error - Unexpected text ';' - lib\features\games\screens\truth_or_dare_screen.dart:712:12 - unexpected_token
+  error - Expected an identifier - lib\features\games\screens\truth_or_dare_screen.dart:713:9 - missing_identifier
+  error - Expected to find ';' - lib\features\games\screens\truth_or_dare_screen.dart:713:9 - expected_token
+  error - Unexpected text ';' - lib\features\games\screens\truth_or_dare_screen.dart:713:9 - unexpected_token
+  error - Expected an identifier - lib\features\games\screens\truth_or_dare_screen.dart:713:10 - missing_identifier
+  error - Expected to find ';' - lib\features\games\screens\truth_or_dare_screen.dart:713:10 - expected_token
+  error - Unexpected text ';' - lib\features\games\screens\truth_or_dare_screen.dart:713:10 - unexpected_token
+  error - Expected an identifier - lib\features\games\screens\truth_or_dare_screen.dart:714:7 - missing_identifier
+  error - Expected to find ';' - lib\features\games\screens\truth_or_dare_screen.dart:714:7 - expected_token
+  error - Unexpected text ';' - lib\features\games\screens\truth_or_dare_screen.dart:714:7 - unexpected_token
+  error - Expected an identifier - lib\features\games\screens\truth_or_dare_screen.dart:714:8 - missing_identifier
+  error - Expected to find ';' - lib\features\games\screens\truth_or_dare_screen.dart:714:8 - expected_token
+  error - Unexpected text ';' - lib\features\games\screens\truth_or_dare_screen.dart:714:8 - unexpected_token
+  error - Expected an identifier - lib\features\games\screens\truth_or_dare_screen.dart:715:5 - missing_identifier
+  error - Unexpected text ';' - lib\features\games\screens\truth_or_dare_screen.dart:715:5 - unexpected_token
+   info - Unnecessary empty statement - lib\features\games\screens\truth_or_dare_screen.dart:715:6 - empty_statements
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\games\screens\truth_or_dare_screen.dart:806:28 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\games\screens\truth_or_dare_screen.dart:808:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\games\screens\truth_or_dare_screen.dart:899:55 - deprecated_member_use
+warning - Unused import: 'package:audioplayers/audioplayers.dart' - lib\features\home\screens\home_screen.dart:3:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\home\screens\home_screen.dart:190:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\home\screens\home_screen.dart:301:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\home\screens\home_screen.dart:392:29 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\home\screens\home_screen.dart:394:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\partner\screens\chat_list_screen.dart:57:66 - deprecated_member_use
+  error - Undefined name 'GiphySDK' - lib\features\partner\screens\chat_screen.dart:325:45 - undefined_identifier
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\partner\screens\chat_screen.dart:334:51 - use_build_context_synchronously
+   info - Unnecessary use of multiple underscores - lib\features\partner\screens\chat_screen.dart:460:49 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\features\partner\screens\chat_screen.dart:460:53 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\partner\screens\chat_screen.dart:482:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\profile\screens\about_screen.dart:29:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\profile\screens\about_screen.dart:79:53 - deprecated_member_use
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\features\profile\screens\edit_profile_screen.dart:60:11 - use_null_aware_elements
+   info - The 'children' argument should be last in widget constructor invocations - lib\features\profile\screens\help_faq_screen.dart:95:7 - sort_child_properties_last
+   info - Unnecessary use of multiple underscores - lib\features\profile\screens\saved_cards_screen.dart:82:33 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\features\profile\screens\saved_cards_screen.dart:129:33 - unnecessary_underscores
+  error - Undefined name 'GiphySDK' - lib\main.dart:19:3 - undefined_identifier
+   info - Statements in an if should be enclosed in a block - lib\services\database_service.dart:48:39 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\services\database_service.dart:49:43 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\services\database_service.dart:50:39 - curly_braces_in_flow_control_structures
+
+111 issues found. (ran in 9.7s)

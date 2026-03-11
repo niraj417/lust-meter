@@ -16,7 +16,7 @@ void main() async {
   await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform);
 
-  GiphySDK.configure(apiKey: AppConstants.giphyApiKey);
+  GiphyFlutterSDK.configure(apiKey: AppConstants.giphyApiKey);
 
   // Seed data (one-time)
   // ignore: unawaited_futures
