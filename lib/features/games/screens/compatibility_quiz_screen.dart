@@ -8,6 +8,9 @@ import '../../../services/database_service.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../services/gemini_service.dart';
 
+import 'package:audioplayers/audioplayers.dart';
+import '../../../core/constants/app_constants.dart';
+
 class CompatibilityQuizScreen extends StatefulWidget {
   const CompatibilityQuizScreen({super.key});
 
@@ -17,6 +20,7 @@ class CompatibilityQuizScreen extends StatefulWidget {
 
 class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
   final PageController _pageController = PageController();
+  final AudioPlayer _audioPlayer = AudioPlayer();
   int _currentIndex = 0;
   bool _isLoading = false;
   final Map<int, int> _answers = {};
@@ -81,6 +85,13 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
     _fetchQuestions();
   }
 
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
   Future<void> _fetchQuestions() async {
     setState(() => _isFetchingQuestions = true);
     try {
@@ -99,7 +110,7 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
         }
       }
 
-      final geminiService = GeminiService(apiKey: 'AIzaSyAZu2a2p5vLsMgB5cDjgWzSJTEAsLLoLCE');
+      final geminiService = GeminiService(apiKey: AppConstants.geminiApiKey);
       final fetched = await geminiService.generateQuizQuestions(
         count: 5, 
         spicy: _isSpicyMode,
@@ -123,6 +134,9 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
   }
 
   void _nextPage() {
+    // Play swipe sound
+    _audioPlayer.play(AssetSource('sounds/card_swipe.mp3'));
+
     if (_currentIndex < _currentQuestions.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
@@ -160,6 +174,8 @@ class _CompatibilityQuizScreenState extends State<CompatibilityQuizScreen> {
 
     // Weighted random score for demo
     final score = 75 + Random().nextInt(20);
+    
+    if (!mounted) return;
     
     showModalBottomSheet(
       context: context,

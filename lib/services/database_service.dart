@@ -22,8 +22,16 @@ class DatabaseService {
 
   // --- Users ---
   Future<UserModel?> getUser(String uid) async {
+    // The original `uid` parameter is non-nullable String, so `uid == null` is not possible.
+    // Assuming the intent is to add checks for empty UID and non-existent document.
+    if (uid.isEmpty) {
+      return null;
+    }
     final doc = await _firestore.collection(AppConstants.usersCollection).doc(uid).get();
-    if (doc.exists && doc.data() != null) {
+    if (!doc.exists) {
+      return null;
+    }
+    if (doc.data() != null) {
       return UserModel.fromMap(doc.data()!, doc.id);
     }
     return null;
@@ -45,9 +53,13 @@ class DatabaseService {
     int physical = data['physicalScore'] ?? 0;
     int bond = data['bondScore'] ?? 0;
 
-    if (category == 'emotionalScore') emotional += points;
-    else if (category == 'physicalScore') physical += points;
-    else if (category == 'bondScore') bond += points;
+    if (category == 'emotionalScore') {
+      emotional += points;
+    } else if (category == 'physicalScore') {
+      physical += points;
+    } else if (category == 'bondScore') {
+      bond += points;
+    }
 
     final newLustScore = ((emotional + physical + bond) / 3).round();
 
@@ -219,6 +231,58 @@ class DatabaseService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => KinkRequestModel.fromMap(doc.data(), doc.id)).toList());
+  }
+
+  /// Deduct points from a user
+  Future<void> deductPoints(String uid, int amount) async {
+    final userRef = _firestore.collection('users').doc(uid);
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(userRef);
+      if (!snapshot.exists) throw Exception("User not found");
+      int currentPoints = snapshot.data()?['points'] ?? 0;
+      if (currentPoints < amount) throw Exception("Insufficient points");
+      transaction.update(userRef, {'points': currentPoints - amount});
+    });
+  }
+
+  /// Update daily streak
+  Future<void> updateStreak(String uid) async {
+    final userRef = _firestore.collection('users').doc(uid);
+    final snapshot = await userRef.get();
+    if (!snapshot.exists) return;
+
+    final data = snapshot.data();
+    final lastActive = (data?['lastActive'] as Timestamp?)?.toDate();
+    int currentStreak = data?['dayStreak'] ?? 0;
+    int points = data?['points'] ?? 0;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    if (lastActive != null) {
+      final lastDate = DateTime(lastActive.year, lastActive.month, lastActive.day);
+      final difference = today.difference(lastDate).inDays;
+
+      if (difference == 1) {
+        // Consecutive day
+        currentStreak += 1;
+        points += 50; // Bonus for streak
+      } else if (difference > 1) {
+        // Streak broken
+        currentStreak = 1;
+      }
+      // If difference is 0, already updated today
+    } else {
+      currentStreak = 1;
+    }
+
+    if (lastActive == null || today.isAfter(DateTime(lastActive.year, lastActive.month, lastActive.day))) {
+      await userRef.update({
+        'dayStreak': currentStreak,
+        'lastActive': FieldValue.serverTimestamp(),
+        'points': points + 10, // Base daily points
+      });
+    }
   }
 
   // Accept/reject kink request

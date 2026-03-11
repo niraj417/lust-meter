@@ -50,12 +50,12 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       String tip;
       if (userModel != null) {
-        final geminiService = GeminiService(apiKey: 'AIzaSyAZu2a2p5vLsMgB5cDjgWzSJTEAsLLoLCE');
+        final geminiService = GeminiService(apiKey: AppConstants.geminiApiKey);
         tip = await geminiService.generateRelationshipTip(
           userName: userModel.displayName,
           lustScore: userModel.lustScore,
           emotionalScore: userModel.emotionalScore,
-          physicalScore: 0,
+          physicalScore: userModel.physicalScore,
         );
       } else {
         final timestamp = DateTime.now().millisecondsSinceEpoch;

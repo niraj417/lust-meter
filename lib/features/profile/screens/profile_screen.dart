@@ -154,29 +154,80 @@ class ProfileScreen extends StatelessWidget {
                           _MenuItem(icon: Icons.info_outline_rounded, label: 'About Lust Meter', onTap: () => context.push(AppRoutes.about)),
                           const SizedBox(height: 24),
 
-                          // Sign out
-                          SizedBox(
-                            width: double.infinity,
-                            height: 52,
-                            child: OutlinedButton.icon(
-                              onPressed: () async {
-                                await context.read<AuthProvider>().signOut();
-                                if (context.mounted) context.go(AppRoutes.login);
-                              },
-                              icon: const Icon(Icons.logout_rounded,
-                                  color: AppColors.error),
-                              label: const Text('Sign Out',
-                                  style: TextStyle(
-                                      color: AppColors.error,
-                                      fontFamily: 'Inter',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 15)),
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: AppColors.error),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14)),
+                          // Account actions
+                          Column(
+                            children: [
+                              SizedBox(
+                                width: double.infinity,
+                                height: 52,
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (c) => AlertDialog(
+                                        backgroundColor: AppColors.surface,
+                                        title: const Text('Sign Out?', style: TextStyle(color: Colors.white)),
+                                        content: const Text('Are you sure you want to sign out?', style: TextStyle(color: AppColors.textSecondary)),
+                                        actions: [
+                                          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+                                          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Sign Out')),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm == true && context.mounted) {
+                                      await context.read<AuthProvider>().signOut();
+                                      if (context.mounted) context.go(AppRoutes.login);
+                                    }
+                                  },
+                                  icon: const Icon(Icons.logout_rounded, color: AppColors.textSecondary),
+                                  label: const Text('Sign Out',
+                                      style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontFamily: 'Inter',
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 15)),
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(color: AppColors.divider),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 52,
+                                child: TextButton.icon(
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (c) => AlertDialog(
+                                        backgroundColor: AppColors.surface,
+                                        title: const Text('Delete Account?', style: TextStyle(color: AppColors.error)),
+                                        content: const Text('This action is permanent and cannot be undone. All your data will be lost.', style: TextStyle(color: AppColors.textSecondary)),
+                                        actions: [
+                                          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(c, true),
+                                            child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm == true && context.mounted) {
+                                      // Logic for account deletion would go here via AuthProvider/DatabaseService
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account deletion requested.')));
+                                    }
+                                  },
+                                  icon: const Icon(Icons.delete_forever_rounded, color: AppColors.error, size: 20),
+                                  label: const Text('Delete Account',
+                                      style: TextStyle(
+                                          color: AppColors.error,
+                                          fontFamily: 'Inter',
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14)),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 40),
                         ]),

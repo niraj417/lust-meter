@@ -269,17 +269,22 @@ class _NotConnected extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                ShaderMask(
-                  shaderCallback: (b) =>
-                      AppColors.fireGradient.createShader(b),
-                  child: Text(
-                    myCode ?? '------',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 36,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: 'Inter',
-                      letterSpacing: 8,
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: ShaderMask(
+                      shaderCallback: (b) =>
+                          AppColors.fireGradient.createShader(b),
+                      child: Text(
+                        myCode ?? '------',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 36,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: 'Inter',
+                          letterSpacing: 8,
+                        ),
+                      ),
                     ),
                   ),
                 ),

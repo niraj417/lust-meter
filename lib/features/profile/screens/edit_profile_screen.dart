@@ -57,7 +57,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
         await _db.updateUserProfile(user.uid, {
           'displayName': _nameController.text.trim(),
-          if (photoUrl != null) 'photoUrl': photoUrl,
+          ...photoUrl != null ? {'photoUrl': photoUrl} : <String, dynamic>{},
         });
 
         await user.updateDisplayName(_nameController.text.trim());

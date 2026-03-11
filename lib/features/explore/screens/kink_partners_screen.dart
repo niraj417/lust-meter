@@ -17,7 +17,7 @@ class _KinkPartnersScreenState extends State<KinkPartnersScreen> {
   final DatabaseService _db = DatabaseService();
   bool _isLoading = true;
   List<UserModel> _partners = [];
-  Set<String> _sentRequests = {};
+  final Set<String> _sentRequests = {};
 
   @override
   void initState() {

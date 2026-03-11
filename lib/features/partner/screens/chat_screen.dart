@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:giphy_flutter_sdk/giphy_dialog.dart';
 import 'package:giphy_flutter_sdk/dto/giphy_media.dart';
-import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+// import 'package:emoji_picker_flutter/emoji_picker_flutter.dart'; // Removed legacy emoji picker
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/message_model.dart';
@@ -25,7 +25,7 @@ class _ChatScreenState extends State<ChatScreen> implements GiphyMediaSelectionL
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   final ImagePicker _picker = ImagePicker();
-  bool _emojiShowing = false;
+  // bool _emojiShowing = false; // Removed legacy emoji picker state
   
   // _messageType is inferred from imageUrl
   int _timerSeconds = 0; // 0 means no timer
@@ -347,17 +347,6 @@ class _ChatScreenState extends State<ChatScreen> implements GiphyMediaSelectionL
                       icon: const Icon(Icons.gif_box_outlined, color: AppColors.primary, size: 24),
                     ),
                     IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _emojiShowing = !_emojiShowing;
-                          if (_emojiShowing) {
-                             FocusScope.of(context).unfocus();
-                          }
-                        });
-                      },
-                      icon: const Icon(Icons.emoji_emotions_outlined, color: AppColors.primary, size: 24),
-                    ),
-                    IconButton(
                       onPressed: _pickImage,
                       icon: const Icon(Icons.add_a_photo_outlined, color: AppColors.primary, size: 24),
                     ),
@@ -390,18 +379,7 @@ class _ChatScreenState extends State<ChatScreen> implements GiphyMediaSelectionL
               ],
             ),
           ),
-          Offstage(
-            offstage: !_emojiShowing,
-            child: SizedBox(
-              height: 250,
-              child: EmojiPicker(
-                onEmojiSelected: (Category? category, Emoji emoji) {
-                   _messageController.text += emoji.emoji;
-                },
-                config: const Config(), // Simplified for now to avoid undefined params
-              ),
-            ),
-          ),
+          // Removed legacy emoji picker widget
         ],
       ),
     );
@@ -464,7 +442,7 @@ class _MessageBubble extends StatelessWidget {
                             Image.network(
                               message.imageUrl!,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.white24),
+                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: Colors.white24),
                             ),
                           if (message.text.isNotEmpty && (message.type != 'image' || !isMe))
                              Padding(

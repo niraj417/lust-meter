@@ -188,47 +188,91 @@ class _RewardItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.divider, width: 1),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Opacity(
-            opacity: isAvailable ? 1.0 : 0.5,
-            child: Text(icon, style: const TextStyle(fontSize: 40)),
+    final user = context.watch<AuthProvider>().user;
+
+    return GestureDetector(
+      onTap: () async {
+        if (!isAvailable || user == null) return;
+
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (c) => AlertDialog(
+            backgroundColor: AppColors.surface,
+            title: Text('Redeem $title?', style: const TextStyle(color: Colors.white)),
+            content: Text('This will cost $cost points. Are you sure?',
+                style: const TextStyle(color: AppColors.textSecondary)),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () => Navigator.pop(c, true),
+                child: Text('Redeem', style: TextStyle(color: color)),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isAvailable ? AppColors.textPrimary : AppColors.textHint,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
+        );
+
+        if (confirm == true) {
+          try {
+            await DatabaseService().deductPoints(user.uid, cost);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Successfully redeemed $title!'),
+                  backgroundColor: AppColors.success,
+                ),
+              );
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
+              );
+            }
+          }
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isAvailable ? color.withValues(alpha: 0.3) : AppColors.divider, width: 1),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Opacity(
+              opacity: isAvailable ? 1.0 : 0.5,
+              child: Text(icon, style: const TextStyle(fontSize: 40)),
             ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '$cost pts',
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
               style: TextStyle(
-                color: isAvailable ? color : AppColors.textHint,
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
+                color: isAvailable ? AppColors.textPrimary : AppColors.textHint,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: isAvailable ? color.withValues(alpha: 0.15) : AppColors.divider.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '$cost pts',
+                style: TextStyle(
+                  color: isAvailable ? color : AppColors.textHint,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

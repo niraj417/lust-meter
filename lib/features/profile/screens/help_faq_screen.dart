@@ -92,14 +92,14 @@ class HelpFAQScreen extends StatelessWidget {
         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
       ),
       childrenPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      iconColor: AppColors.primary,
+      collapsedIconColor: Colors.white54,
       children: [
         Text(
           answer,
           style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.5),
         ),
       ],
-      iconColor: AppColors.primary,
-      collapsedIconColor: Colors.white54,
     );
   }
 }
