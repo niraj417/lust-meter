@@ -322,10 +322,10 @@ class _FantasyCardWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: card.color,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withAlpha(50), width: 1.5),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: card.color.withAlpha(80),
+            color: card.color.withValues(alpha: 0.31),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -426,12 +426,12 @@ class _ActionButton extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: color.withAlpha(30),
+          color: color.withValues(alpha: 0.12),
           border: Border.all(color: color, width: 2),
           boxShadow: large
               ? [
                   BoxShadow(
-                      color: color.withAlpha(80),
+                      color: color.withValues(alpha: 0.31),
                       blurRadius: 20,
                       spreadRadius: 2)
                 ]

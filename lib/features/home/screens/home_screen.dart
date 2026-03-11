@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../../core/theme/app_theme.dart';
@@ -12,6 +11,7 @@ import 'package:provider/provider.dart';
 import '../../../core/models/partner_connection_model.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:rxdart/rxdart.dart';
+import '../../../services/sound_service.dart';
 import '../../explore/models/kink_model.dart';
 import '../../explore/screens/position_detail_screen.dart';
 import '../../explore/screens/kink_detail_screen.dart';
@@ -186,7 +186,7 @@ class _LustScoreCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.35),
+            color: AppColors.primary.withValues(alpha: 0.35),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),
@@ -297,7 +297,7 @@ class _AiTipCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.secondary.withOpacity(0.3), width: 1),
+        border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -388,9 +388,9 @@ class _ActionCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         decoration: BoxDecoration(
-          color: item.color.withOpacity(0.12),
+          color: item.color.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: item.color.withOpacity(0.3), width: 1),
+          border: Border.all(color: item.color.withValues(alpha: 0.3), width: 1),
         ),
         child: Column(children: [
           Text(item.icon, style: const TextStyle(fontSize: 28)),
@@ -493,7 +493,7 @@ class _DiscoverySectionState extends State<_DiscoverySection> {
               if (items.isEmpty) return const Center(child: Text('No new discoveries today!', style: TextStyle(color: Colors.white38)));
               
               // Shuffle for variety as requested
-              items.shuffle(Random(DateTime.now().day));
+              items.shuffle(Random());
 
               return CardSwiper(
                 cardsCount: items.length,
@@ -508,9 +508,7 @@ class _DiscoverySectionState extends State<_DiscoverySection> {
                 },
                 onSwipe: (prevIndex, currentIndex, direction) {
                    final item = items[prevIndex];
-                   try {
-                     AudioPlayer().play(AssetSource('sounds/card_swipe.mp3'));
-                   } catch (_) {}
+                    SoundService().play('sounds/card_swipe.mp3');
                    
                    if (direction == CardSwiperDirection.right) {
                      // Love/Like
@@ -549,7 +547,7 @@ class _PositionDiscoveryCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
           image: pos.imageUrl != null ? DecorationImage(image: NetworkImage(pos.imageUrl!), fit: BoxFit.cover, opacity: 0.4) : null,
         ),
         padding: const EdgeInsets.all(24),
@@ -563,7 +561,7 @@ class _PositionDiscoveryCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(pos.description, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70, fontSize: 14)),
             const SizedBox(height: 12),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: AppColors.primary.withAlpha(50), borderRadius: BorderRadius.circular(8)), child: Text(pos.level, style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold))),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)), child: Text(pos.level, style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold))),
           ],
         ),
       ),
@@ -583,15 +581,15 @@ class _KinkDiscoveryCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
-          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [AppColors.surface, AppColors.secondary.withOpacity(0.1)]),
+          border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3)),
+          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [AppColors.surface, AppColors.secondary.withValues(alpha: 0.1)]),
         ),
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppColors.secondary.withOpacity(0.2), shape: BoxShape.circle), child: const Icon(Icons.auto_awesome, color: AppColors.secondary, size: 32)),
+            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppColors.secondary.withValues(alpha: 0.2), shape: BoxShape.circle), child: const Icon(Icons.auto_awesome, color: AppColors.secondary, size: 32)),
             const SizedBox(height: 16),
             Text(kink.title, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'Inter')),
             const SizedBox(height: 8),

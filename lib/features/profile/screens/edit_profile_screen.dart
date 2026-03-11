@@ -52,6 +52,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         String? photoUrl;
         if (_selectedImage != null) {
           photoUrl = await _db.uploadProfileImage(user.uid, _selectedImage!);
+          await user.updatePhotoURL(photoUrl);
         }
 
         await _db.updateUserProfile(user.uid, {
@@ -59,9 +60,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           if (photoUrl != null) 'photoUrl': photoUrl,
         });
 
-        if (_selectedImage == null) {
-           await user.updateDisplayName(_nameController.text.trim());
-        }
+        await user.updateDisplayName(_nameController.text.trim());
         
         await authProvider.refreshUser();
         

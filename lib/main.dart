@@ -6,6 +6,8 @@ import 'firebase_options.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'core/network/app_router.dart';
 import 'core/utils/seed_data.dart';
+import 'package:giphy_flutter_sdk/giphy_flutter_sdk.dart';
+import 'core/constants/app_constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,9 +16,13 @@ void main() async {
   await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform);
 
+  GiphySDK.configure(apiKey: AppConstants.giphyApiKey);
+
   // Seed data (one-time)
   // ignore: unawaited_futures
   DataSeeder.seedKinks();
+  // ignore: unawaited_futures
+  DataSeeder.seedPositions();
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

@@ -3,13 +3,14 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:giphy_flutter_sdk/giphy_flutter_sdk.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
-import 'package:giphy_get/giphy_get.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/message_model.dart';
 import '../../../services/database_service.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/constants/app_constants.dart';
 
 class ChatScreen extends StatefulWidget {
   final String connectionId;
@@ -23,6 +24,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   final ImagePicker _picker = ImagePicker();
+  bool _emojiShowing = false;
   
   // _messageType is inferred from imageUrl
   int _timerSeconds = 0; // 0 means no timer
@@ -276,7 +278,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             margin: const EdgeInsets.only(right: 8),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.2),
+                              color: AppColors.primary.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
@@ -291,7 +293,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Row(
@@ -316,30 +318,37 @@ class _ChatScreenState extends State<ChatScreen> {
                 Row(
                   children: [
                     IconButton(
-                      onPressed: () {
-                        showModalBottomSheet(
-                          context: context,
-                          builder: (context) => EmojiPicker(
-                            onEmojiSelected: (category, emoji) {
-                              _messageController.text += emoji.emoji;
-                            },
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.emoji_emotions_outlined, color: AppColors.primary, size: 24),
-                    ),
-                    IconButton(
                       onPressed: () async {
-                        final gif = await GiphyGet.getGif(
-                          context: context,
-                          apiKey: 'AIzaSyAZu2a2p5vLsMgB5cDjgWzSJTEAsLLoLCE', // Using same key if compatible or dummy
-                          lang: GiphyLanguage.english,
-                        );
-                        if (gif != null && gif.images?.original?.url != null) {
-                          _sendMessage(imageUrl: gif.images!.original!.url, text: 'Sent a GIF');
+                        try {
+                          // Note: According to giphy_flutter_sdk docs, we might need different keys for Android/iOS
+                          // but for now we use the one provided.
+                          final gif = await GiphySDK.sharedContent.showSelection(
+                            apiKey: AppConstants.giphyApiKey,
+                          );
+                          
+                          if (gif != null && gif.url != null) {
+                            _sendMessage(imageUrl: gif.url, text: 'Sent a GIF');
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                             ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error loading Giphy: $e')),
+                            );
+                          }
                         }
                       },
                       icon: const Icon(Icons.gif_box_outlined, color: AppColors.primary, size: 24),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _emojiShowing = !_emojiShowing;
+                          if (_emojiShowing) {
+                             FocusScope.of(context).unfocus();
+                          }
+                        });
+                      },
+                      icon: const Icon(Icons.emoji_emotions_outlined, color: AppColors.primary, size: 24),
                     ),
                     IconButton(
                       onPressed: _pickImage,
@@ -372,6 +381,18 @@ class _ChatScreenState extends State<ChatScreen> {
                   ],
                 ),
               ],
+            ),
+          ),
+          Offstage(
+            offstage: !_emojiShowing,
+            child: SizedBox(
+              height: 250,
+              child: EmojiPicker(
+                onEmojiSelected: (Category? category, Emoji emoji) {
+                   _messageController.text += emoji.emoji;
+                },
+                config: const Config(), // Simplified for now to avoid undefined params
+              ),
             ),
           ),
         ],
@@ -458,7 +479,7 @@ class _MessageBubble extends StatelessWidget {
                           child: BackdropFilter(
                             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                             child: Container(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               child: const Center(
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,

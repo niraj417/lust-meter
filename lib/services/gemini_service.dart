@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import '../core/constants/app_constants.dart';
+
 class GeminiService {
   static const String _baseUrl =
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
@@ -14,7 +16,7 @@ class GeminiService {
 
   /// Static method to generate text, as used in HomeScreen
   static Future<String> generateText(String prompt) async {
-    final apiKey = _staticApiKey ?? 'AIzaSyAZu2a2p5vLsMgB5cDjgWzSJTEAsLLoLCE';
+    final apiKey = _staticApiKey ?? AppConstants.geminiApiKey;
     final response = await http.post(
       Uri.parse('$_baseUrl?key=$apiKey'),
       headers: {'Content-Type': 'application/json'},
@@ -55,14 +57,18 @@ class GeminiService {
   }) async {
     final prompt = '''
 You are a warm, supportive relationship coach. Generate ONE concise, positive relationship tip 
+You are a warm, supportive relationship coach. Generate ONE concise, positive relationship tip
 (2-3 sentences max) for a couple. Personalise it based on:
 - Name: $userName
 - Lust Score: $lustScore/100
 - Emotional Score: $emotionalScore/100
 - Physical Score: $physicalScore/100
 
-Focus on the lowest score area. Be encouraging and specific. No emojis in the tip itself. 
-Ensure this tip is completely unique and different from previous ones. (Context Seed: \${DateTime.now().millisecondsSinceEpoch})
+IMPORTANT:
+1. Rotate through these areas regularly: Communication, Physical Intimacy, Shared Adventure, Emotional Vulnerability, Appreciation.
+2. Ensure this tip is COMPLETELY DIFFERENT and much more specific than common generic advice.
+3. Reference the current time or a "vibe" (Context Seed: ${DateTime.now().millisecondsSinceEpoch}).
+4. No emojis in the tip itself.
 ''';
     return _generate(prompt);
   }

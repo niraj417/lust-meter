@@ -1,11 +1,13 @@
 import 'dart:math';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import 'package:audioplayers/audioplayers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/game_session_model.dart';
 import '../../../services/database_service.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../services/sound_service.dart';
 
 class SpinWheelScreen extends StatefulWidget {
   const SpinWheelScreen({super.key});
@@ -23,6 +25,16 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
   double _totalRotation = 0;
 
   bool _isSpicyMode = false;
+  bool _isOnlineMode = false;
+  String? _connectionId;
+  String? _partnerId;
+  String? _userName;
+  String? _partnerName;
+  String? _userPhotoUrl;
+  String? _partnerPhotoUrl;
+  bool _isPartnerJoined = false;
+  String _currentPlayerTurn = '';
+  StreamSubscription? _gameStateSubscription;
 
   static const List<_WheelSegment> _normalSegments = [
     _WheelSegment('Massage 💆', Color(0xFFE63950)),
@@ -52,16 +64,157 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this);
+    _loadUserContext();
+  }
+
+  Future<void> _loadUserContext() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final uid = authProvider.user?.uid;
+    if (uid != null) {
+      final user = await DatabaseService().getUser(uid);
+      _userName = user?.displayName;
+      _userPhotoUrl = user?.photoUrl;
+      _currentPlayerTurn = uid;
+      
+      final conn = await DatabaseService().getFirstConnection(uid);
+      if (conn != null) {
+        _connectionId = conn.connectionId;
+        final partnerUid = conn.users.firstWhere((id) => id != uid, orElse: () => '');
+        if (partnerUid.isNotEmpty) {
+          _partnerId = partnerUid;
+          final partner = await DatabaseService().getUser(partnerUid);
+          _partnerName = partner?.displayName;
+          _partnerPhotoUrl = partner?.photoUrl;
+        }
+      }
+      setState(() {});
+    }
+  }
+
+  void _toggleOnlineMode(bool val) {
+    setState(() => _isOnlineMode = val);
+    _gameStateSubscription?.cancel();
+    if (val && _connectionId != null) {
+      final uid = context.read<AuthProvider>().user?.uid;
+      DatabaseService().updateGameState(_connectionId!, 'spin_wheel', {
+        'joined': FieldValue.arrayUnion([uid]),
+        'status': 'joined',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      _gameStateSubscription = DatabaseService()
+          .getGameStateStream(_connectionId!, 'spin_wheel')
+          .listen((snapshot) {
+        if (!snapshot.exists) return;
+        final data = snapshot.data() as Map<String, dynamic>;
+        final joined = List<String>.from(data['joined'] ?? []);
+        final turn = data['turn'] as String?;
+        final lastSpinner = data['lastSpinner'] as String?;
+
+        setState(() {
+          _isPartnerJoined = _partnerId != null && joined.contains(_partnerId);
+          if (turn != null) _currentPlayerTurn = turn;
+        });
+
+        if (lastSpinner != uid) {
+          final status = data['status'] as String?;
+          if (status == 'spinning') {
+            if (!_isSpinning) {
+              _remoteSpin();
+            }
+          }
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
+    _gameStateSubscription?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
-  void _spin() {
+  void _remoteSpin() {
+    // This will be called when partner spins
+    // Logic to start the animation without trigger Firestore update
+    // We might need to receive the target rotation or seed from Firestore
+    // For simplicity, let's just trigger a local spin visual
+    _spin(isRemote: true);
+  }
+
+  void _showPartnerSearchDialog() {
+    final uid = context.read<AuthProvider>().user?.uid;
+    if (uid == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text('Select Connected Partner', style: TextStyle(color: Colors.white)),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: StreamBuilder(
+            stream: DatabaseService().getUserConnectionsStream(uid),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+              final connections = snapshot.data!;
+              if (connections.isEmpty) {
+                return const Center(child: Text('No connected partners found. Connect with someone in the Partner tab first!', style: TextStyle(color: AppColors.textSecondary)));
+              }
+              return ListView.builder(
+                itemCount: connections.length,
+                itemBuilder: (context, index) {
+                  final conn = connections[index];
+                  final partnerUid = conn.users.firstWhere((id) => id != uid);
+                  return FutureBuilder(
+                    future: DatabaseService().getUser(partnerUid),
+                    builder: (context, userSnap) {
+                      final user = userSnap.data;
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: user?.photoUrl != null ? NetworkImage(user!.photoUrl!) : null,
+                          child: user?.photoUrl == null ? const Icon(Icons.person) : null,
+                        ),
+                        title: Text(user?.displayName ?? 'Loading...', style: const TextStyle(color: Colors.white)),
+                        subtitle: const Text('Connected', style: TextStyle(color: Colors.green, fontSize: 12)),
+                        onTap: () {
+                          setState(() {
+                            _connectionId = conn.connectionId;
+                            _partnerId = partnerUid;
+                            _partnerName = user?.displayName;
+                            _partnerPhotoUrl = user?.photoUrl;
+                            _isOnlineMode = false; // Reset to allow re-enabling with new connection
+                          });
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Selected partner: ${user?.displayName}')),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _spin({bool isRemote = false}) {
     if (_isSpinning) return;
+
+    final uid = context.read<AuthProvider>().user?.uid;
+    if (_isOnlineMode && !isRemote && _currentPlayerTurn.isNotEmpty && _currentPlayerTurn != uid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("It's your partner's turn!")),
+      );
+      return;
+    }
+
     final random = Random();
     final extraSpins = (5 + random.nextInt(5)) * 2 * pi;
     final currentSegments = _currentSegments;
@@ -85,9 +238,16 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
       _result = null;
     });
 
-    try {
-      AudioPlayer().play(AssetSource('sounds/wheel_spin.mp3'));
-    } catch (_) {}
+    SoundService().play('sounds/wheel_spin.mp3');
+
+    if (_isOnlineMode && !isRemote && _connectionId != null) {
+      DatabaseService().updateGameState(_connectionId!, 'spin_wheel', {
+        'lastSpinner': uid,
+        'status': 'spinning',
+        'turn': _currentPlayerTurn,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    }
 
     _controller.reset();
     _controller.forward().then((_) async {
@@ -100,8 +260,19 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
         _result = currentSegments[idx % currentSegments.length].label;
       });
 
+      if (!isRemote && _isOnlineMode && _connectionId != null) {
+        final nextTurn = _partnerId ?? uid;
+        DatabaseService().updateGameState(_connectionId!, 'spin_wheel', {
+           'status': 'stopped',
+           'result': _result,
+           'turn': nextTurn,
+           'lastSpinner': uid,
+           'timestamp': FieldValue.serverTimestamp(),
+        });
+      }
+
       // --- Record Game Session for Points ---
-      if (mounted) {
+      if (mounted && !isRemote) {
         final authData = context.read<AuthProvider>();
         if (authData.user != null) {
           final uid = authData.user!.uid;
@@ -128,12 +299,27 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
         backgroundColor: AppColors.background,
         leading: const BackButton(),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person_search_rounded, color: Colors.white),
+            onPressed: _showPartnerSearchDialog,
+          ),
+          Row(
+            children: [
+              const Text('Online 🌐', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+              Switch(
+                value: _isOnlineMode,
+                activeThumbColor: AppColors.primary,
+                onChanged: _isSpinning || _connectionId == null ? null : _toggleOnlineMode,
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
           Row(
             children: [
               const Text('Spicy 🔥', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
               Switch(
                 value: _isSpicyMode,
-                        activeThumbColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
                 onChanged: _isSpinning
                     ? null
                     : (val) {
@@ -166,18 +352,48 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
             const Icon(Icons.arrow_drop_down_rounded,
                 color: AppColors.goldAccent, size: 48),
 
-            // Wheel
-            AnimatedBuilder(
-              animation: _controller,
-              builder: (_, __) {
-                final angle = _controller.isAnimating
-                    ? _rotationAnim.value
-                    : _totalRotation;
-                return Transform.rotate(
-                  angle: angle,
-                  child: _WheelWidget(segments: _currentSegments),
-                );
-              },
+            // Wheel Area
+            Expanded(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  if (_isOnlineMode) ...[
+                    // Partner Avatar (Top)
+                    Positioned(
+                      top: 0,
+                      child: _PlayerAvatar(
+                        url: _partnerPhotoUrl,
+                        name: _partnerName ?? 'Partner',
+                        isJoined: _isPartnerJoined,
+                        isTurn: _currentPlayerTurn == _partnerId,
+                      ),
+                    ),
+                    // User Avatar (Bottom)
+                    Positioned(
+                      bottom: 0,
+                      child: _PlayerAvatar(
+                        url: _userPhotoUrl,
+                        name: _userName ?? 'You',
+                        isJoined: true,
+                        isTurn: _currentPlayerTurn == context.read<AuthProvider>().user?.uid,
+                      ),
+                    ),
+                  ],
+                  // The Wheel
+                  AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, child) {
+                      final angle = _controller.isAnimating
+                          ? _rotationAnim.value
+                          : _totalRotation;
+                      return Transform.rotate(
+                        angle: angle,
+                        child: _WheelWidget(segments: _currentSegments),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 32),
 
@@ -246,8 +462,7 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
                     color: _isSpinning ? AppColors.surfaceElevated : null,
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: Container(
-                    alignment: Alignment.center,
+                  child: Center(
                     child: Text(
                       _isSpinning ? 'Spinning...' : 'SPIN! 🌀',
                       style: const TextStyle(
@@ -273,7 +488,85 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
 class _WheelSegment {
   final String label;
   final Color color;
+
   const _WheelSegment(this.label, this.color);
+}
+
+class _PlayerAvatar extends StatelessWidget {
+  final String? url;
+  final String name;
+  final bool isJoined;
+  final bool isTurn;
+
+  const _PlayerAvatar({
+    this.url,
+    required this.name,
+    required this.isJoined,
+    required this.isTurn,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isTurn ? AppColors.goldAccent : Colors.transparent,
+                  width: 3,
+                ),
+                boxShadow: isTurn
+                    ? [
+                        BoxShadow(
+                          color: AppColors.goldAccent.withValues(alpha: 0.5),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        )
+                      ]
+                    : [],
+              ),
+              child: CircleAvatar(
+                radius: 30,
+                backgroundColor: AppColors.surface,
+                backgroundImage: url != null ? NetworkImage(url!) : null,
+                child: url == null
+                    ? const Icon(Icons.person, color: Colors.white, size: 30)
+                    : null,
+              ),
+            ),
+            if (isJoined)
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.background, width: 2),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          name,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: isTurn ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _WheelWidget extends StatelessWidget {

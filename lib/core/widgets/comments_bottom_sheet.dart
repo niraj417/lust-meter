@@ -5,7 +5,8 @@ import '../../services/database_service.dart';
 import '../models/comment_model.dart';
 import '../theme/app_theme.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:giphy_flutter_sdk/giphy_flutter_sdk.dart';
+import '../../core/constants/app_constants.dart';
 
 class CommentsBottomSheet extends StatefulWidget {
   final String collection;
@@ -115,7 +116,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shrinkWrap: true,
                   itemCount: comments.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  separatorBuilder: (context, index) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
                     final comment = comments[index];
                     final isLiked = user != null && comment.isLikedBy(user.uid);
@@ -125,7 +126,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                       children: [
                         CircleAvatar(
                           radius: 16,
-                          backgroundColor: AppColors.primary.withOpacity(0.2),
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.2),
                           child: Text(
                             comment.authorName[0].toUpperCase(),
                             style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold),
@@ -211,17 +212,24 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
             child: Row(
               children: [
                 IconButton(
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      builder: (context) => EmojiPicker(
-                        onEmojiSelected: (category, emoji) {
-                          _commentController.text += emoji.emoji;
-                        },
-                      ),
-                    );
+                  onPressed: () async {
+                    try {
+                      final gif = await GiphySDK.sharedContent.showSelection(
+                        apiKey: AppConstants.giphyApiKey,
+                      );
+                      if (gif != null && gif.url != null) {
+                        _commentController.text += ' ${gif.url} ';
+                        _postComment();
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error loading Giphy: $e')),
+                        );
+                      }
+                    }
                   },
-                  icon: const Icon(Icons.emoji_emotions_outlined, color: AppColors.primary, size: 20),
+                  icon: const Icon(Icons.gif_box_outlined, color: AppColors.primary, size: 20),
                 ),
                 Expanded(
                   child: TextField(
@@ -231,7 +239,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                       hintText: 'Add a comment...',
                       hintStyle: const TextStyle(color: Colors.white54),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.05),
+                      fillColor: Colors.white.withValues(alpha: 0.05),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),

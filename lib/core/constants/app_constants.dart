@@ -31,6 +31,10 @@ class AppConstants {
 
   // Gemini
   static const geminiModel = 'gemini-2.0-flash';
+  static const geminiApiKey = 'AIzaSyAZu2a2p5vLsMgB5cDjgWzSJTEAsLLoLCE';
+
+  // Giphy
+  static const giphyApiKey = 'QLjgq729ko5nx6pUaqjaFj0yh1SzxBiO';
 
   // Shared Prefs Keys
   static const prefKeyOnboarded = 'is_onboarded';

@@ -17,7 +17,7 @@ class SavedCardsScreen extends StatefulWidget {
 
 class _SavedCardsScreenState extends State<SavedCardsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final DatabaseService _db = DatabaseService();
+  // final DatabaseService _db = DatabaseService();
 
   @override
   void initState() {
@@ -97,7 +97,7 @@ class _PosListTile extends StatelessWidget {
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PositionDetailScreen(position: pos))),
       leading: Container(
         width: 48, height: 48,
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
         child: Center(child: Text(pos.emoji, style: const TextStyle(fontSize: 24))),
       ),
       title: Text(pos.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -144,7 +144,7 @@ class _KinkListTile extends StatelessWidget {
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => KinkDetailScreen(kink: kink))),
       leading: Container(
         width: 48, height: 48,
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
         child: const Center(child: Icon(Icons.auto_awesome, color: AppColors.secondary, size: 24)),
       ),
       title: Text(kink.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),

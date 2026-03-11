@@ -9,6 +9,7 @@ class PositionModel {
   final String colorHex;
   final String detailedInstruction;
   final String tips;
+  final String category;
   final String? imageUrl;
 
   final int likes;
@@ -24,6 +25,7 @@ class PositionModel {
     required this.colorHex,
     required this.detailedInstruction,
     required this.tips,
+    this.category = 'General',
     this.imageUrl,
     this.likes = 0,
     this.authorId,
@@ -40,6 +42,7 @@ class PositionModel {
       colorHex: map['colorHex'] ?? 'E63950',
       detailedInstruction: map['detailedInstruction'] ?? '',
       tips: map['tips'] ?? '',
+      category: map['category'] ?? 'General',
       imageUrl: map['imageUrl'],
       likes: map['likes'] ?? 0,
       authorId: map['authorId'],
@@ -56,6 +59,7 @@ class PositionModel {
       'colorHex': colorHex,
       'detailedInstruction': detailedInstruction,
       'tips': tips,
+      'category': category,
       'imageUrl': imageUrl,
       'likes': likes,
       'authorId': authorId,

@@ -413,6 +413,33 @@ class DatabaseService {
     });
   }
 
+  Future<void> togglePositionLike(String userId, String positionId, bool isLiked) async {
+    final docId = '${userId}_$positionId';
+    final interactionRef = _firestore.collection(AppConstants.positionInteractionsCollection).doc(docId);
+    
+    await interactionRef.set({
+      'userId': userId,
+      'positionId': positionId,
+      'isLiked': isLiked,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    // Update global likes count
+    await _firestore.collection(AppConstants.positionsCollection).doc(positionId).update({
+      'likes': FieldValue.increment(isLiked ? 1 : -1)
+    });
+  }
+
+  Stream<bool> isPositionLikedStream(String userId, String positionId) {
+    if (userId.isEmpty) return Stream.value(false);
+    final docId = '${userId}_$positionId';
+    return _firestore
+        .collection(AppConstants.positionInteractionsCollection)
+        .doc(docId)
+        .snapshots()
+        .map((doc) => doc.exists && doc.data()?['isLiked'] == true);
+  }
+
   // --- Generic Comments ---
   Stream<List<CommentModel>> getCommentsStream(String collection, String docId) {
     return _firestore
@@ -531,6 +558,21 @@ class DatabaseService {
 
   Future<void> addKinkCategory(String category) async {
     await _firestore.collection('metadata').doc('kink_categories').set({
+      'categories': FieldValue.arrayUnion([category])
+    }, SetOptions(merge: true));
+  }
+
+  // --- Position Categories ---
+  Future<List<String>> getPositionCategories() async {
+    final doc = await _firestore.collection('metadata').doc('position_categories').get();
+    if (doc.exists && doc.data() != null) {
+      return List<String>.from(doc.data()!['categories'] ?? []);
+    }
+    return ['Man on Top', 'Woman on Top', 'Anal', 'Standing', 'Oral', 'Other'];
+  }
+
+  Future<void> addPositionCategory(String category) async {
+    await _firestore.collection('metadata').doc('position_categories').set({
       'categories': FieldValue.arrayUnion([category])
     }, SetOptions(merge: true));
   }

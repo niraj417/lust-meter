@@ -248,4 +248,79 @@ class DataSeeder {
 
     await batch.commit();
   }
+
+  static Future<void> seedPositions() async {
+    final snapshot = await _db.getPositionsStream().first;
+    if (snapshot.length > 50) return;
+
+    final positions = [
+      'Missionary Position', 'Woman on Top (Cowgirl)', 'Reverse Cowgirl', 'Doggy Style', 'Spooning',
+      'Sixty-Nine (69)', 'Lotus', 'Standing missionary', 'Seated Cowgirl', 'Kneeling Doggy',
+      'Pretzel', 'Flatiron', 'G-Whiz', 'The X', 'Coital Alignment Technique',
+      'Butterfly', 'Wheelbarrow', 'The Bridge', 'Tabletop', 'Shower Stand',
+      'The Corkscrew', 'Cross-Legged Missionary', 'The Clam', 'Deep Doggy', 'Scissoring',
+      'Vertical Sixty-Nine', 'Standing Wheelbarrow', 'The Hammock', 'The Rocker', 'The Squat',
+      'The Leapfrog', 'The Swing', 'The Pile Driver', 'Reverse Spooning', 'The Empress',
+      'The Seahorse', 'The Magic Mountain', 'The Ocean Wave', 'The Diamond', 'The Cobra',
+      'The Eagle', 'The Dancer', 'The Prayer', 'The Rodeo', 'The Bow',
+      'The G-Spotter', 'The Stool', 'The Wall Press', 'The Straddle', 'The Shelf',
+      'The Cradle', 'The Reverse Plank', 'The Kneeling Cross', 'The Dolphin', 'The Figure Four',
+      'The Pinwheel', 'The Serpent', 'The Anchor', 'The Starfish', 'The Mermaid',
+      'The Perch', 'The Spider', 'The Slide', 'The Propeller', 'The Suspended Missionary',
+      'The Bridge with Legs Up', 'The Desk Driver', 'The Armchair Ride', 'The Doorway Dash', 'The Edge of the Bed',
+      'Over the Couch', 'The Beached Whale', 'The Standing Hug', 'The Seated Straddle', 'The X-Factor',
+      'The Double Decker', 'The Tight Squeeze', 'The Power Lifter', 'The Backbend', 'The V-Position',
+      'The Standing Lotus', 'The Reclined Cowgirl', 'The Rocking Horse', 'The Stack', 'The Waterfall',
+      'The Chair Ride', 'The Window Shopper', 'The Cliffhanger', 'The Suspended Spoon', 'The G-Spot Missionary',
+      'The Reverse Doggy', 'The Standing Doggy', 'The Lying Lotus', 'The Cross-Body Missionary', 'The Side-Lying Cowgirl',
+      'The Bent Knee Missionary', 'The Modified Doggy', 'The Deep Reach', 'The Balancing Act', 'The Inverted V',
+      'The Wrapped Lotus', 'The Figure Eight', 'The Pretzel Twist', 'The Wall Slide', 'The Standing Wrap',
+      'The High Dive', 'The Sitting Doggy', 'The Knee Press', 'The Elevated Lotus', 'The Shoulder Stand',
+      'The Tabletop Scissoring', 'The Reverse Plank Grind', 'The Suspended Scissoring', 'The Sitting Eagle', 'The Standing Frog',
+      'The Reclined Frog', 'The Kneeling Frog', 'The Leaning Tower', 'The Half-Lotus', 'The Wrapped Missionary',
+      'The Deep Spoon', 'The Double Loop', 'The Standing Figure Four', 'The Reverse G-Whiz', 'The Suspended Butterfly',
+      'The Sitting Butterfly', 'The Standing Butterfly', 'The Kneeling Butterfly', 'The Wall Assisted Butterfly', 'The Elevated Butterfly',
+      'The Wrapped Butterfly', 'The Deep Butterfly', 'The Inverted Butterfly', 'The Cross Butterfly', 'The Side Butterfly',
+      'The Shower Butterfly', 'The Chair Butterfly', 'The Desk Butterfly', 'The Hammock Butterfly', 'The Tabletop Butterfly',
+      'The Standing Kiss', 'The Shower Kiss', 'The Wall Kiss', 'The Kneeling Kiss', 'The Standing Hug with Lift',
+      'The Standing Hug with Wrap', 'The Sitting Hug', 'The Kneeling Hug', 'The Reclined Hug', 'The Side-Lying Hug',
+      'The Spooning Hug', 'The Wrapped Hug', 'The Deep Hug', 'The Inverted Hug', 'The Cross Hug',
+      'The Shower Hug', 'The Chair Hug', 'The Desk Hug', 'The Hammock Hug', 'The Tabletop Hug',
+      'The Standing Cross', 'The Shower Cross', 'The Wall Cross', 'The Kneeling Cross', 'The Sitting Cross',
+      'The Reclined Cross', 'The Side-Lying Cross', 'The Wrapped Cross', 'The Deep Cross', 'The Inverted Cross',
+      'The Double Cross', 'The Standing Starfish', 'The Shower Starfish', 'The Wall Starfish', 'The Kneeling Starfish',
+      'The Sitting Starfish', 'The Reclined Starfish', 'The Side-Lying Starfish', 'The Wrapped Starfish', 'The Deep Starfish',
+      'The Inverted Starfish', 'The Cross Starfish', 'The Double Starfish', 'The Standing Mermaid', 'The Shower Mermaid',
+      'The Wall Mermaid', 'The Kneeling Mermaid', 'The Sitting Mermaid', 'The Reclined Mermaid', 'The Side-Lying Mermaid',
+      'The Wrapped Mermaid', 'The Deep Mermaid', 'The Inverted Mermaid', 'The Cross Mermaid', 'The Double Mermaid',
+      'The Standing Cobra', 'The Shower Cobra', 'The Wall Cobra'
+    ];
+
+    final categories = ['Man on Top', 'Woman on Top', 'Anal', 'Standing', 'Oral', 'Other'];
+    final levels = ['Beginner', 'Intermediate', 'Advanced'];
+    final emojis = ['🔥', '💫', '⚡', '🌟', '💖', '🔞', '😘', '😈', '🫦'];
+    
+    final batch = FirebaseFirestore.instance.batch();
+    for (var name in positions) {
+       final ref = FirebaseFirestore.instance.collection(AppConstants.positionsCollection).doc();
+       final pos = {
+         'name': name,
+         'emoji': emojis[DateTime.now().millisecond % emojis.length],
+         'description': 'A exciting and intimate variation of $name to spice up your routine.',
+         'level': levels[DateTime.now().millisecond % levels.length],
+         'colorHex': '9B30FF',
+         'detailedInstruction': 'Find a comfortable surface and explore $name with your partner.',
+         'tips': 'Take it slow and focus on mutual pleasure.',
+         'category': categories[DateTime.now().millisecond % categories.length],
+         'createdAt': FieldValue.serverTimestamp(),
+       };
+       batch.set(ref, pos);
+    }
+    
+    // Seed position categories
+    final metaRef = FirebaseFirestore.instance.collection('metadata').doc('position_categories');
+    batch.set(metaRef, {'categories': categories}, SetOptions(merge: true));
+
+    await batch.commit();
+  }
 }

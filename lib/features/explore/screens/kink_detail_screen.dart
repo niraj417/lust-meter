@@ -148,7 +148,7 @@ class _KinkDetailScreenState extends State<KinkDetailScreen> {
                   icon: const Icon(Icons.group_add_rounded),
                   label: const Text('Find Partners'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.secondary.withOpacity(0.2),
+                    backgroundColor: AppColors.secondary.withValues(alpha: 0.2),
                     foregroundColor: AppColors.secondary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

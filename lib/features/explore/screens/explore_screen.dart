@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_theme.dart';
 import '../models/kink_model.dart';
 import '../models/position_model.dart';
@@ -13,6 +11,8 @@ import '../models/challenge_model.dart';
 import '../models/challenge_interaction_model.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/widgets/comments_bottom_sheet.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -61,7 +61,7 @@ class _ExploreScreenState extends State<ExploreScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
+        children: [
           _PositionsTab(),
           _ChallengesTab(),
           _KinksTab(),
@@ -73,6 +73,7 @@ class _ExploreScreenState extends State<ExploreScreen>
 
 // ─── Positions ───────────────────────────────────────────────────────────────
 
+
 class _PositionsTab extends StatefulWidget {
   const _PositionsTab();
 
@@ -82,6 +83,66 @@ class _PositionsTab extends StatefulWidget {
 
 class _PositionsTabState extends State<_PositionsTab> {
   final DatabaseService _dbService = DatabaseService();
+  String _selectedCategory = 'All';
+  List<String> _categories = ['All', 'Man on Top', 'Woman on Top', 'Anal', 'Standing', 'Oral', 'Other'];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    final cats = await _dbService.getPositionCategories();
+    if (mounted) {
+      setState(() {
+        _categories = ['All', ...cats];
+      });
+    }
+  }
+
+  // _showAddCategoryDialog removed as it was unused
+
+  Widget _categoryBar() {
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        itemCount: _categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final cat = _categories[index];
+          final isSelected = cat == _selectedCategory;
+          return GestureDetector(
+            onTap: () => setState(() => _selectedCategory = cat),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : const Color(0xFF161224),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isSelected ? AppColors.primary : Colors.transparent,
+                  width: 1,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  cat,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                    fontFamily: 'Inter',
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,25 +158,43 @@ class _PositionsTabState extends State<_PositionsTab> {
               return const Center(child: Text('Failed to load positions', style: TextStyle(color: Colors.white70)));
             }
     
-            final positions = snapshot.data ?? [];
+            var positions = snapshot.data ?? [];
+            if (_selectedCategory != 'All') {
+              positions = positions.where((p) => p.category.toLowerCase() == _selectedCategory.toLowerCase()).toList();
+            }
+
             if (positions.isEmpty) {
-              return const Center(
-                child: Text('No positions yet.\nBe the first to suggest one!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textSecondary, fontFamily: 'Inter')),
+              return Column(
+                children: [
+                  _categoryBar(),
+                  const Expanded(
+                    child: Center(
+                      child: Text('No positions yet.\nBe the first to suggest one!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: AppColors.textSecondary, fontFamily: 'Inter')),
+                    ),
+                  ),
+                ],
               );
             }
     
-            return GridView.builder(
-              padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 80), // Padding for FAB
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.75, // Adjusted for buttons
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemCount: positions.length,
-              itemBuilder: (_, i) => _PositionCard(pos: positions[i]),
+            return Column(
+              children: [
+                _categoryBar(),
+                Expanded(
+                  child: GridView.builder(
+                    padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 80), 
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.75, 
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount: positions.length,
+                    itemBuilder: (_, i) => _PositionCard(pos: positions[i]),
+                  ),
+                ),
+              ],
             );
           },
         ),
@@ -267,7 +346,7 @@ class _PositionsTabState extends State<_PositionsTab> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               decoration: BoxDecoration(
-                                color: isSel ? AppColors.primary.withOpacity(0.2) : const Color(0xFF161224),
+                                color: isSel ? AppColors.primary.withValues(alpha: 0.2) : const Color(0xFF161224),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(color: isSel ? AppColors.primary : Colors.transparent),
                               ),
@@ -360,123 +439,143 @@ class _PositionCard extends StatelessWidget {
         );
       },
       child: Container(
-        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withAlpha(60), width: 1),
+          border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(pos.emoji, style: const TextStyle(fontSize: 28)),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: color.withAlpha(30),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    pos.level,
-                    style: TextStyle(
-                      color: color,
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 9,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (pos.imageUrl != null)
-              Container(
-                height: 80,
-                width: double.infinity,
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  image: DecorationImage(
-                    image: NetworkImage(pos.imageUrl!),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-            Text(
-              pos.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Inter',
-                fontSize: 13,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              pos.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontFamily: 'Inter',
-                fontSize: 11,
-              ),
-            ),
-            const Spacer(),
-            if (user != null)
-              StreamBuilder<bool>(
-                stream: DatabaseService().getPositionInteractionStream(user.uid, pos.id),
-                builder: (context, snapshot) {
-                  final isLiked = snapshot.data ?? false;
-                  return Row(
-                    children: [
-                      // Like
-                      GestureDetector(
-                        onTap: () {
-                          DatabaseService().recordPositionInteraction(
-                            user.uid,
-                            pos.id,
-                            isLiked: !isLiked,
-                          );
-                        },
-                        child: Row(
-                          children: [
-                            Icon(isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded, 
-                                 color: isLiked ? AppColors.primary : Colors.white54, size: 16),
-                            const SizedBox(width: 4),
-                            Text('${pos.likes}', style: TextStyle(
-                              color: isLiked ? AppColors.primary : Colors.white54,
-                              fontSize: 11, fontWeight: FontWeight.w500
-                            )),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Column( crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Image / Emoji Header
+              Expanded(
+                flex: 5,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Gradient Placeholder
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            color.withValues(alpha: 0.8),
+                            color.withValues(alpha: 0.4),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      // Comment
-                      GestureDetector(
-                        onTap: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (context) => CommentsBottomSheet(
-                              collection: AppConstants.positionsCollection,
-                              documentId: pos.id,
+                    ),
+                    if (pos.imageUrl != null)
+                      Image.network(
+                        pos.imageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Center(child: Text(pos.emoji, style: const TextStyle(fontSize: 48))),
+                      )
+                    else
+                      Center(child: Text(pos.emoji, style: const TextStyle(fontSize: 56))),
+                    
+                    // Level Badge
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black26,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          pos.level.toUpperCase(),
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Info Content
+              Expanded(
+                flex: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        pos.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        pos.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          height: 1.3,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                      const Spacer(),
+                      Row(
+                        children: [
+                          // Likes
+                          StreamBuilder<bool>(
+                            stream: DatabaseService().isPositionLikedStream(user?.uid ?? '', pos.id),
+                            builder: (context, snapshot) {
+                              final isLiked = snapshot.data ?? false;
+                              return GestureDetector(
+                                onTap: () {
+                                  if (user?.uid != null) {
+                                    DatabaseService().togglePositionLike(user!.uid, pos.id, !isLiked);
+                                  }
+                                },
+                                child: Row(
+                                  children: [
+                                    Icon(isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded, 
+                                         color: isLiked ? AppColors.primary : Colors.white54, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text('${pos.likes}', style: TextStyle(
+                                      color: isLiked ? AppColors.primary : Colors.white54,
+                                      fontSize: 11, fontWeight: FontWeight.w500
+                                    )),
+                                  ],
+                                ),
+                              );
+                            }
+                          ),
+                          const Spacer(),
+                          // Category Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                          );
-                        },
-                        child: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white54, size: 16),
+                            child: Text(
+                              pos.category,
+                              style: const TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-                  );
-                }
+                  ),
+                ),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -514,7 +613,7 @@ class _ChallengesTabState extends State<_ChallengesTab> {
             final challenges = snapshot.data ?? [];
             if (challenges.isEmpty) {
               return const Center(
-                child: Text('No challenges yet.\\nBe the first to add one!',
+                child: Text('No challenges yet.\nBe the first to add one!',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: AppColors.textSecondary, fontFamily: 'Inter')),
               );
@@ -679,7 +778,7 @@ class _ChallengeCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: cColor.withAlpha(50), width: 1),
+        border: Border.all(color: cColor.withValues(alpha: 0.2), width: 1),
       ),
       child: Row(children: [
         Container(
@@ -705,7 +804,7 @@ class _ChallengeCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                    color: cColor.withAlpha(25),
+                    color: cColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8)),
                 child: Text(challenge.duration,
                     style: TextStyle(
@@ -922,11 +1021,11 @@ class _KinksTabState extends State<_KinksTab> {
                       fillColor: const Color(0xFF161224),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+                        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+                        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -1109,7 +1208,7 @@ class _KinksTabState extends State<_KinksTab> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: isSel ? AppColors.primary.withOpacity(0.2) : const Color(0xFF161224),
+                                color: isSel ? AppColors.primary.withValues(alpha: 0.2) : const Color(0xFF161224),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(color: isSel ? AppColors.primary : Colors.transparent),
                               ),
@@ -1200,7 +1299,7 @@ class _KinkListCard extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Center(
@@ -1292,7 +1391,7 @@ class _KinkListCard extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.08),
+                                color: Colors.white.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
@@ -1309,6 +1408,7 @@ class _KinkListCard extends StatelessWidget {
                         );
                       }
                     ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),

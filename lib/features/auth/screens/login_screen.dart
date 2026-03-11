@@ -118,9 +118,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.error.withAlpha(25),
+                      color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.error.withAlpha(80)),
+                      border: Border.all(color: AppColors.error.withValues(alpha: 0.31)),
                     ),
                     child: Text(
                       auth.errorMessage!,

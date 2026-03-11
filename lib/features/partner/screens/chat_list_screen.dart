@@ -54,7 +54,8 @@ class ChatListScreen extends StatelessWidget {
                           child: ListTile(
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             leading: CircleAvatar(
-                              backgroundColor: AppColors.primary.withOpacity(0.2),
+                              backgroundColor: AppColors.primary.withValues(alpha: 
+0.2),
                               child: const Icon(Icons.person, color: AppColors.primary),
                             ),
                             title: Text(name, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary)),

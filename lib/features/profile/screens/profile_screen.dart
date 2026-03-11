@@ -60,7 +60,7 @@ class ProfileScreen extends StatelessWidget {
                                   gradient: AppColors.primaryGradient,
                                   boxShadow: [
                                     BoxShadow(
-                                        color: AppColors.primary.withAlpha(80),
+                                        color: AppColors.primary.withValues(alpha: 0.31),
                                         blurRadius: 20,
                                         spreadRadius: 3)
                                   ],
@@ -120,7 +120,7 @@ class ProfileScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(18),
                               boxShadow: [
                                 BoxShadow(
-                                    color: AppColors.primary.withAlpha(60),
+                                    color: AppColors.primary.withValues(alpha: 0.23),
                                     blurRadius: 16,
                                     offset: const Offset(0, 6))
                               ],

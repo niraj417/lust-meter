@@ -141,7 +141,8 @@ class _PartnerScreenState extends State<PartnerScreen> {
                                 child: ListTile(
                                   contentPadding: const EdgeInsets.all(16),
                                   leading: CircleAvatar(
-                                    backgroundColor: AppColors.primary.withOpacity(0.2),
+                                    backgroundColor: AppColors.primary.withValues(alpha: 
+0.2),
                                     child: const Icon(Icons.person, color: AppColors.primary),
                                   ),
                                   title: Text(name, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary) ?? const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
@@ -217,7 +218,7 @@ class _NotConnected extends StatelessWidget {
               gradient: AppColors.fireGradient,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withAlpha(80),
+                  color: AppColors.primary.withValues(alpha: 0.31),
                   blurRadius: 40,
                   spreadRadius: 4,
                 )
@@ -411,9 +412,9 @@ class _LockedTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface.withAlpha(128),
+        color: AppColors.surface.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.divider.withAlpha(128)),
+        border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
       ),
       child: Row(children: [
         Text(emoji, style: const TextStyle(fontSize: 24)),
